@@ -4,27 +4,32 @@ Une plateforme collaborative minimaliste au style **Pixel Art (8-bit)** permetta
 
 ![Status](https://img.shields.io/badge/status-functional-success?style=for-the-badge)
 ![Stack](https://img.shields.io/badge/stack-HTML_CSS_JS_Supabase-black?style=for-the-badge)
+![Auth](https://img.shields.io/badge/auth-SUPABASE-green?style=for-the-badge)
 
 ## 📺 Aperçu
 
-L'interface est conçue en **Noir & Blanc** strict, sans framework JS, pour une expérience ultra-rapide et rétro.
+L'interface est conçue en **Noir & Blanc** strict, sans framework JS lourd, pour une expérience ultra-rapide et rétro.
 
 **Fonctionnalités principales :**
 
-- **Upload Sécurisé :** Envoi de fichiers PDF vers le cloud (Supabase Storage).
-- **Métadonnées :** Catégorisation précise (Université d'Artois / Lille, Matières spécifiques : Algo, Momi, Calculus...).
+- **Compte Étudiant :** Système d'inscription et de connexion (Email/Mot de passe).
+- **Upload Authentifié :** L'envoi de fichiers est protégé et réservé aux membres connectés.
+- **Métadonnées :** Catégorisation précise (Université d'Artois / Lille, Matières : Algo, Momi, Calculus...).
 - **Recherche Filtrée :** Moteur de recherche multicritères (Prof, Année, Type d'exam, Formation).
-- **UX Rétro :** Animations CSS (Respiration, Clignotement), polices pixelisées et modales interactives.
+- **UX Rétro :**
+  - Animations CSS (Respiration, Clignotement).
+  - Notifications "Toast" personnalisées (remplacement des alertes natives).
+  - Police 'Press Start 2P'.
 
 ## 🛠️ Stack Technique
 
 - **Frontend :** HTML5, CSS3 (Variables, Flex/Grid), Vanilla JS.
-- **Backend / DB :** [Supabase](https://supabase.com) (PostgreSQL + Storage).
+- **Backend :** [Supabase](https://supabase.com) (Auth, Database & Storage).
 - **Police :** 'Press Start 2P'.
 
 ## 🚀 Installation & Configuration
 
-Puisque ce projet utilise une base de données, vous devez configurer vos propres clés API pour le faire tourner en local.
+Puisque ce projet utilise une base de données et l'authentification, vous devez configurer vos clés API.
 
 1.  **Cloner le repo**
 
@@ -33,8 +38,14 @@ Puisque ce projet utilise une base de données, vous devez configurer vos propre
     cd schoolbank
     ```
 
-2.  **Configurer les clés API**
-    Créez un fichier nommé `config.js` à la racine du projet (ce fichier est ignoré par Git pour la sécurité).
+2.  **Configurer Supabase**
+
+    - Créez un projet Supabase.
+    - Activez l'authentification par **Email** dans le menu _Authentication > Providers_.
+    - Créez un bucket de stockage nommé `pdfs`.
+
+3.  **Clés API**
+    Créez un fichier `config.js` à la racine :
 
     ```javascript
     // config.js
@@ -42,12 +53,12 @@ Puisque ce projet utilise une base de données, vous devez configurer vos propre
     const SUPABASE_KEY = "VOTRE_CLE_PUBLIQUE_ANON";
     ```
 
-3.  **Lancer le projet**
-    Ouvrez simplement `index.html` dans votre navigateur.
+4.  **Lancer le projet**
+    Ouvrez `index.html` dans votre navigateur.
 
 ## 🗄️ Structure de la Base de Données (SQL)
 
-Si vous voulez reproduire le backend sur Supabase, voici la structure de la table `files` et les politiques de sécurité (RLS) :
+Pour sécuriser l'application, nous utilisons les politiques RLS (Row Level Security).
 
 ```sql
 -- Table : files
@@ -61,13 +72,19 @@ create table files (
   subject text,
   prof text,
   type text,
-  year text
+  year text,
+  -- Optionnel : Lier au user si besoin
+  -- user_id uuid references auth.users
 );
 
 -- Sécurité (RLS)
--- Autoriser l'lecture et l'écriture publique (anon)
+
+-- 1. Tout le monde peut voir les fichiers
 create policy "Public Access" on files for select using (true);
-create policy "Public Insert" on files for insert with check (true);
+
+-- 2. SEULS les connectés peuvent ajouter des fichiers (Recommandé)
+create policy "Auth Upload" on files for insert
+with check (auth.role() = 'authenticated');
 ```
 
 ## 📜 Licence

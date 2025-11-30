@@ -272,3 +272,50 @@ h2 {
     box-shadow: 4px 4px 0px var(--text-color);
   }
 }
+
+/* --- TOAST NOTIFICATION (Remplacement des alertes) --- */
+#pixel-toast {
+  visibility: hidden; /* Caché par défaut */
+  min-width: 250px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  text-align: center;
+  border: 4px solid var(--text-color);
+  box-shadow: 4px 4px 0px var(--text-color);
+  padding: 1rem;
+  position: fixed;
+  z-index: 9999; /* Au dessus de tout */
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-family: "Press Start 2P", cursive;
+}
+
+/* Animation d'apparition */
+#pixel-toast.show {
+  visibility: visible;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 30px;
+    opacity: 1;
+  }
+}
+
+@keyframes fadeout {
+  from {
+    bottom: 30px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}

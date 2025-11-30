@@ -18,13 +18,32 @@
   </head>
   <body>
     <div class="container full-height">
-      <header>
+      <header
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
         <h1 class="logo">schoolbank</h1>
+
+        <div id="auth-ui" style="display: flex; align-items: center; gap: 10px">
+          <span id="user-display" style="font-size: 0.5rem; display: none"
+            >USER</span
+          >
+          <button
+            id="auth-btn"
+            class="pixel-button small-btn"
+            style="margin-top: 0; padding: 0.5rem 1rem; font-size: 0.6rem"
+          >
+            LOGIN
+          </button>
+        </div>
       </header>
 
       <main>
         <div class="pixel-button-container">
-          <label for="file-upload-input" class="pixel-button"> UPLOADS </label>
+          <button id="upload-trigger-btn" class="pixel-button">UPLOADS</button>
           <input type="file" id="file-upload-input" />
         </div>
       </main>
@@ -229,6 +248,54 @@
         </div>
       </div>
     </div>
+
+    <div id="auth-modal" class="modal hidden">
+      <div class="modal-content" style="max-width: 400px">
+        <h2 id="auth-title">> CONNEXION_</h2>
+
+        <div class="form-group" style="margin-bottom: 1rem">
+          <label>EMAIL</label>
+          <input
+            type="email"
+            id="auth-email"
+            class="pixel-input"
+            placeholder="EMAIL..."
+          />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem">
+          <label>MOT DE PASSE</label>
+          <input
+            type="password"
+            id="auth-password"
+            class="pixel-input"
+            placeholder="******"
+          />
+        </div>
+
+        <div
+          style="margin-bottom: 1.5rem; font-size: 0.6rem; text-align: center"
+        >
+          <a href="#" id="toggle-auth-mode" class="dl-link"
+            >Pas de compte ? S'inscrire</a
+          >
+        </div>
+
+        <div class="modal-buttons">
+          <button
+            id="auth-cancel-btn"
+            class="pixel-button small-btn"
+            style="border-style: dashed"
+          >
+            ANNULER
+          </button>
+          <button id="auth-submit-btn" class="pixel-button small-btn">
+            GO
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="pixel-toast">...</div>
 
     <script src="config.js"></script>
     <script src="script.js"></script>
