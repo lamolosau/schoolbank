@@ -1,0 +1,149 @@
+/* --- Configuration de base et couleurs --- */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+}
+
+body,
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Press Start 2P", cursive, monospace;
+  overflow: hidden;
+}
+
+/* --- Mise en page (Layout) --- */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  padding: 2rem;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+main {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* J'ai réduit un peu l'espace sous le bouton pour laisser place à la flèche */
+  padding-bottom: 5vh;
+}
+
+/* --- Typographie et Netteté --- */
+.logo,
+.pixel-button,
+.scroll-arrow {
+  /* Applique la netteté pixel à tous les éléments de texte importants */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+}
+
+.logo {
+  margin: 0;
+  font-size: 1.5rem;
+  text-transform: lowercase;
+}
+
+.logo::after {
+  content: "_";
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* --- Le Gros Bouton Pixel --- */
+.pixel-button-container {
+  position: relative;
+}
+
+.pixel-button {
+  display: inline-block;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 2rem 3rem;
+  font-size: 2rem;
+  text-transform: uppercase;
+  border: 6px solid var(--text-color);
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.1s step-start;
+  box-shadow: 6px 6px 0px var(--text-color);
+}
+
+.pixel-button:hover {
+  background-color: var(--text-color);
+  color: var(--bg-color);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px var(--text-color);
+}
+
+.pixel-button:active {
+  transform: translate(4px, 4px);
+  box-shadow: 2px 2px 0px var(--text-color);
+}
+
+#file-upload-input {
+  display: none;
+}
+
+/* --- NOUVEAU : La Flèche qui respire --- */
+.scroll-arrow {
+  text-align: center;
+  font-size: 1.5rem;
+  padding-bottom: 2rem; /* Espace depuis le bas de l'écran */
+  flex-shrink: 0; /* Empêche la flèche de s'écraser si l'écran est petit */
+  cursor: default;
+  /* Application de l'animation */
+  animation: breathing 2s ease-in-out infinite;
+}
+
+/* Définition de l'effet de respiration */
+@keyframes breathing {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3); /* Grossit légèrement */
+    opacity: 0.6; /* Devient un peu transparent */
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  header {
+    justify-content: center;
+  }
+  .logo {
+    font-size: 1.2rem;
+  }
+  .pixel-button {
+    padding: 1.5rem 2rem;
+    font-size: 1.2rem;
+    border-width: 4px;
+    box-shadow: 4px 4px 0px var(--text-color);
+  }
+  .scroll-arrow {
+    font-size: 1.2rem;
+    padding-bottom: 1.5rem;
+  }
+}
