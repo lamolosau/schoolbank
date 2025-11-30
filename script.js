@@ -285,19 +285,39 @@ searchButton.addEventListener("click", () => {
   });
 });
 
+// --- 5. AFFICHER TABLEAU (MODIFIÉ POUR SECURITE) ---
 function renderTable(files) {
   tableBody.innerHTML = "";
+
   files.forEach((file) => {
     const row = document.createElement("tr");
+    // J'ai retiré le href direct et ajouté un attribut 'data-url'
     row.innerHTML = `
             <td>${file.name}</td>
             <td>${file.subject}</td>
             <td>${file.type}</td>
             <td>${file.prof}</td>
             <td>${file.year}</td>
-            <td><a href="${file.file_url}" target="_blank" class="dl-link">[v]</a></td>
+            <td><a href="#" class="dl-link" data-url="${file.file_url}">[v]</a></td>
         `;
     tableBody.appendChild(row);
+  });
+
+  // On ajoute un écouteur d'événement sur tous les boutons de téléchargement
+  document.querySelectorAll(".dl-link").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault(); // Empêche le lien de s'ouvrir tout seul
+
+      // VERIFICATION DE SECURITE
+      if (!currentUser) {
+        showToast("CONNECTE-TOI POUR TELECHARGER !");
+        authModal.classList.remove("hidden"); // Ouvre la fenêtre de connexion
+      } else {
+        // Si connecté, on ouvre le lien dans un nouvel onglet
+        const url = e.target.getAttribute("data-url");
+        window.open(url, "_blank");
+      }
+    });
   });
 }
 
