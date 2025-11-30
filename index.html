@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>schoolbank</title>
+    <title>schoolbank_</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,9 +13,11 @@
     />
 
     <link rel="stylesheet" href="style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
-    <div class="container">
+    <div class="container full-height">
       <header>
         <h1 class="logo">schoolbank</h1>
       </header>
@@ -27,7 +29,208 @@
         </div>
       </main>
 
-      <div class="scroll-arrow">v</div>
+      <a href="#bank" class="scroll-arrow">v</a>
     </div>
+
+    <div id="bank" class="container bank-section">
+      <div class="filters-container">
+        <h2>> FILTRES_</h2>
+
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>ETABLISSEMENT</label>
+            <select id="filter-etab" class="pixel-input">
+              <option value="">TOUS</option>
+              <option value="artois">UNIVERSITÉ D'ARTOIS</option>
+              <option value="lille">UNIVERSITÉ DE LILLE</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>FORMATION</label>
+            <select id="filter-formation" class="pixel-input">
+              <option value="">TOUTES</option>
+              <option value="licence_info">LICENCE INFORMATIQUE</option>
+              <option value="licence_sv">LICENCE SV</option>
+              <option value="licence_chimie">LICENCE CHIMIE</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>MATIERE</label>
+            <select id="filter-subject" class="pixel-input">
+              <option value="">TOUTES</option>
+              <option value="momi">MOMI</option>
+              <option value="calculus">CALCULUS</option>
+              <option value="algo1">ALGO 1</option>
+              <option value="algo2">ALGO 2</option>
+              <option value="algo3">ALGO 3</option>
+              <option value="algo4">ALGO 4</option>
+              <option value="archi">ARCHITECTURE 1</option>
+              <option value="archi">ARCHITECTURE 2</option>
+              <option value="algebre">ALGEBRE LINEAIRE</option>
+              <option value="archi">UNIX</option>
+              <option value="anglais">ANGLAIS</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>PROFESSEUR</label>
+            <input
+              type="text"
+              id="filter-prof"
+              class="pixel-input"
+              placeholder="NOM DU PROF..."
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>TYPE</label>
+            <select id="filter-type" class="pixel-input">
+              <option value="">TOUS</option>
+              <option value="exam">EXAMEN</option>
+              <option value="cc">CC</option>
+              <option value="td">TD</option>
+              <option value="tp">TP</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>ANNEE</label>
+            <select id="filter-year" class="pixel-input">
+              <option value="">TOUTES</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="2019">2019</option>
+              <option value="2018">2018</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="search-btn" class="pixel-button small-btn">CHERCHER</button>
+      </div>
+
+      <div class="results-container">
+        <h2>> FICHIERS_</h2>
+        <div class="table-wrapper">
+          <table class="pixel-table">
+            <thead>
+              <tr>
+                <th>NOM</th>
+                <th>MATIERE</th>
+                <th>TYPE</th>
+                <th>PROF</th>
+                <th>ANNEE</th>
+                <th>DL</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="upload-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>> INFO_FICHIER</h2>
+
+        <div class="form-group">
+          <label>NOM DU FICHIER</label>
+          <div id="modal-filename" class="file-name-display">...</div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>ETABLISSEMENT</label>
+            <select id="input-etab" class="pixel-input">
+              <option value="artois">UNIVERSITÉ D'ARTOIS</option>
+              <option value="lille">UNIVERSITÉ DE LILLE</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>FORMATION</label>
+            <select id="input-formation" class="pixel-input">
+              <option value="licence_info">LICENCE INFORMATIQUE</option>
+              <option value="licence_sv">LICENCE SV</option>
+              <option value="licence_chimie">LICENCE CHIMIE</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>MATIERE</label>
+            <select id="input-subject" class="pixel-input">
+              <option value="momi">MOMI</option>
+              <option value="calculus">CALCULUS</option>
+              <option value="algo1">ALGO 1</option>
+              <option value="algo2">ALGO 2</option>
+              <option value="algo3">ALGO 3</option>
+              <option value="algo4">ALGO 4</option>
+              <option value="archi">ARCHITECTURE 1</option>
+              <option value="archi">ARCHITECTURE 2</option>
+              <option value="algebre">ALGEBRE LINEAIRE</option>
+              <option value="archi">UNIX</option>
+              <option value="anglais">ANGLAIS</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>PROFESSEUR</label>
+            <input
+              type="text"
+              id="input-prof"
+              class="pixel-input"
+              placeholder="NOM DU PROF"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>TYPE</label>
+            <select id="input-type" class="pixel-input">
+              <option value="exam">EXAMEN</option>
+              <option value="cc">CC</option>
+              <option value="td">TD</option>
+              <option value="tp">TP</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>ANNEE</label>
+            <select id="input-year" class="pixel-input">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="2019">2019</option>
+              <option value="2018">2018</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button
+            id="cancel-btn"
+            class="pixel-button small-btn"
+            style="border-style: dashed"
+          >
+            ANNULER
+          </button>
+          <button id="confirm-upload-btn" class="pixel-button small-btn">
+            ENVOYER
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
   </body>
 </html>
