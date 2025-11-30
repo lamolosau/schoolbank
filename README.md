@@ -68,9 +68,9 @@ create table files (
 -- Autoriser l'lecture et l'écriture publique (anon)
 create policy "Public Access" on files for select using (true);
 create policy "Public Insert" on files for insert with check (true);
+```
 
 ## 📜 Licence
 
 Projet Open Source.
-*Design & Code par lamolosau.*
-```
+_Design & Code par lamolosau._
