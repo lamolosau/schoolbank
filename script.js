@@ -379,6 +379,7 @@ confirmUploadBtn.addEventListener("click", async () => {
         body: {
           fileId: insertedFile.id,
           fileUrl: urlData.publicUrl,
+          filePath: cleanName,
           metadata: info,
         },
       }
