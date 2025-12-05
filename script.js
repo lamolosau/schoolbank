@@ -14,7 +14,7 @@ const cancelUploadBtn = document.getElementById("cancel-btn");
 const confirmUploadBtn = document.getElementById("confirm-upload-btn");
 
 // Elements Auth
-const loginBtn = document.getElementById("login-btn"); // Ancien auth-btn
+const loginBtn = document.getElementById("login-btn");
 const profileTriggerBtn = document.getElementById("profile-trigger-btn");
 const profileModal = document.getElementById("profile-modal");
 const closeProfileBtn = document.getElementById("close-profile-btn");
@@ -45,8 +45,6 @@ let isLoginMode = true;
 function showToast(message) {
   toastElement.textContent = message;
   toastElement.className = "show";
-
-  // Enlève la classe après 3 secondes (correspond à l'animation CSS)
   setTimeout(function () {
     toastElement.className = toastElement.className.replace("show", "");
   }, 3000);
@@ -71,8 +69,6 @@ async function checkUser() {
 
     if (profile) {
       currentUser.profileData = profile;
-
-      // NOUVEAU : On lance l'écouteur temps réel ici !
       setupRealtimeListener();
     }
   }
@@ -81,17 +77,14 @@ async function checkUser() {
 
 function updateAuthUI() {
   if (currentUser) {
-    // CONNECTÉ : On cache Login, on affiche Profil
     if (loginBtn) loginBtn.style.display = "none";
     if (profileTriggerBtn) profileTriggerBtn.style.display = "inline-block";
   } else {
-    // DECONNECTÉ : On affiche Login, on cache Profil
     if (loginBtn) loginBtn.style.display = "inline-block";
     if (profileTriggerBtn) profileTriggerBtn.style.display = "none";
   }
 }
 
-// 1. Ouvrir la modale de connexion (Visiteur)
 loginBtn.addEventListener("click", () => {
   authModal.classList.remove("hidden");
   resetAuthForm();
@@ -102,51 +95,35 @@ loginBtn.addEventListener("click", () => {
 // ==========================================
 
 profileTriggerBtn.addEventListener("click", () => {
-  // Sécurité : si pas connecté, on ne fait rien
   if (!currentUser) return;
 
-  // 1. Récupération des éléments HTML de la modale
   const upgradeBtn = document.getElementById("upgrade-btn");
   const manageBtn = document.getElementById("manage-sub-btn");
 
-  // Remplissage de l'email
   profileEmail.textContent = currentUser.email;
 
-  // 2. Remplissage des données (Coins & Statut)
   if (currentUser.profileData) {
     profileCoins.textContent = currentUser.profileData.coins;
-
     const isPremium = currentUser.profileData.is_premium;
 
-    // --- A. GESTION DU TEXTE STATUT ---
     profileStatus.textContent = isPremium ? "PREMIUM" : "FREEMIUM";
-    // Vert si premium, noir sinon
     profileStatus.style.color = isPremium ? "#00aa00" : "inherit";
 
-    // --- B. GESTION DES BOUTONS (Bascule) ---
+    // Gestion UI des boutons (La vraie sécurité est côté serveur/RPC)
     if (isPremium) {
-      // === CAS PREMIUM : On affiche "GÉRER ABO" ===
       if (upgradeBtn) upgradeBtn.style.display = "none";
       if (manageBtn) {
         manageBtn.style.display = "inline-block";
-        // Remise à zéro du texte (au cas où il est resté sur "Chargement...")
         manageBtn.textContent = "GÉRER ABO";
 
-        // LOGIQUE DU PORTAIL CLIENT (Simple et Robuste)
-        // LOGIQUE DU PORTAIL CLIENT (Ouvre dans un nouvel onglet)
         manageBtn.onclick = async (e) => {
           e.preventDefault();
-
-          // 1. On ouvre l'onglet TOUT DE SUITE (pour éviter les bloqueurs de pop-up)
-          // On peut mettre un petit message le temps que ça charge
           const portalTab = window.open("", "_blank");
           portalTab.document.write(
-            "<html><body style='background:black; color:white; font-family:monospace; display:flex; justify-content:center; align-items:center; height:100vh;'>Chargement du portail Stripe...</body></html>"
+            "<html><body style='background:black; color:white; font-family:monospace; display:flex; justify-content:center; align-items:center; height:100vh;'>Chargement...</body></html>"
           );
-
           manageBtn.textContent = "CHARGEMENT...";
 
-          // 2. Appel à l'Edge Function
           const { data, error } = await supabase.functions.invoke(
             "create-portal-link"
           );
@@ -155,61 +132,45 @@ profileTriggerBtn.addEventListener("click", () => {
             console.error("Erreur Supabase:", error);
             manageBtn.textContent = "ERREUR";
             showToast("ERREUR PORTAIL");
-
-            // Si ça plante, on ferme l'onglet qui ne sert à rien
             portalTab.close();
           } else if (data?.url) {
-            // 3. Succès : On redirige l'onglet déjà ouvert vers la bonne URL
             portalTab.location.href = data.url;
-
-            // On remet le texte du bouton
             manageBtn.textContent = "GÉRER ABO";
           } else {
-            console.error("Erreur:", data);
             manageBtn.textContent = "ERREUR";
-            showToast("PAS DE COMPTE STRIPE TROUVÉ");
+            showToast("PAS DE COMPTE TROUVÉ");
             portalTab.close();
           }
         };
       }
     } else {
-      // === CAS FREEMIUM : On affiche "UPGRADE" ===
       if (manageBtn) manageBtn.style.display = "none";
-
       if (upgradeBtn) {
         upgradeBtn.style.display = "inline-block";
         const baseStripeUrl =
           "https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00";
-
-        // Construction de l'URL avec les infos utilisateur
         const customUrl = `${baseStripeUrl}?prefilled_email=${encodeURIComponent(
           currentUser.email
         )}&client_reference_id=${currentUser.id}`;
-
         upgradeBtn.href = customUrl;
       }
     }
   } else {
-    // Cas de chargement ou erreur de profil
     profileCoins.textContent = "0";
     profileStatus.textContent = "CHARGEMENT...";
     if (upgradeBtn) upgradeBtn.style.display = "none";
     if (manageBtn) manageBtn.style.display = "none";
   }
-
-  // 3. IMPORTANT : On affiche la modale à la fin
   profileModal.classList.remove("hidden");
 });
 
-// 3. Fermer la modale profil (Bouton Retour)
 closeProfileBtn.addEventListener("click", () => {
   profileModal.classList.add("hidden");
 });
 
-// 4. Se déconnecter (Bouton dans la modale)
 logoutBtn.addEventListener("click", async () => {
-  profileModal.classList.add("hidden"); // Ferme la modale
-  await signOut(); // Lance la déconnexion Supabase
+  profileModal.classList.add("hidden");
+  await signOut();
 });
 
 authCancelBtn.addEventListener("click", () => {
@@ -235,7 +196,7 @@ authSubmitBtn.addEventListener("click", async () => {
   const password = authPassInput.value;
 
   if (!email || !password) {
-    showToast("REMPLIR TOUS LES CHAMPS !"); // Remplacé alert
+    showToast("REMPLIR TOUS LES CHAMPS !");
     return;
   }
 
@@ -249,22 +210,18 @@ authSubmitBtn.addEventListener("click", async () => {
       });
       if (error) throw error;
       currentUser = data.user;
-      showToast("CONNEXION REUSSIE !"); // Remplacé alert
+      showToast("CONNEXION REUSSIE !");
     } else {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       currentUser = data.user;
-      showToast("COMPTE CREE !"); // Remplacé alert
+      showToast("COMPTE CREE !");
     }
-
     authModal.classList.add("hidden");
     updateAuthUI();
   } catch (error) {
     console.error(error);
-    showToast("ERREUR: " + error.message); // Remplacé alert
+    showToast("ERREUR: " + error.message);
   } finally {
     authSubmitBtn.textContent = isLoginMode ? "GO" : "CREER";
   }
@@ -275,7 +232,7 @@ async function signOut() {
   if (!error) {
     currentUser = null;
     updateAuthUI();
-    showToast("DECONNECTE."); // Remplacé alert
+    showToast("DECONNECTE.");
   }
 }
 
@@ -285,7 +242,7 @@ async function signOut() {
 
 uploadTriggerBtn.addEventListener("click", () => {
   if (!currentUser) {
-    showToast("CONNECTE-TOI D'ABORD !"); // Remplacé alert
+    showToast("CONNECTE-TOI D'ABORD !");
     authModal.classList.remove("hidden");
     return;
   }
@@ -295,13 +252,15 @@ uploadTriggerBtn.addEventListener("click", () => {
 fileInput.addEventListener("change", (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
+    // Petite sécu JS (mais doit être renforcée côté Supabase Storage)
+    if (selectedFile.type !== "application/pdf") {
+      showToast("SEULS LES PDF SONT ACCEPTÉS !");
+      fileInput.value = "";
+      selectedFile = null;
+      return;
+    }
     modalFilename.textContent = selectedFile.name;
     modalUpload.classList.remove("hidden");
-  }
-  if (selectedFile.type !== "application/pdf") {
-    showToast("SEULS LES PDF SONT ACCEPTÉS !");
-    fileInput.value = ""; // Reset
-    return;
   }
 });
 
@@ -312,12 +271,7 @@ cancelUploadBtn.addEventListener("click", () => {
 });
 
 confirmUploadBtn.addEventListener("click", async () => {
-  if (!selectedFile) return;
-
-  if (!currentUser) {
-    showToast("ERREUR: NON CONNECTE");
-    return;
-  }
+  if (!selectedFile || !currentUser) return;
 
   const info = {
     etab: document.getElementById("input-etab").value,
@@ -332,7 +286,6 @@ confirmUploadBtn.addEventListener("click", async () => {
   confirmUploadBtn.textContent = "ENVOI...";
 
   try {
-    // 1. Upload du fichier physique (Storage)
     const cleanName =
       Date.now() + "_" + selectedFile.name.replace(/[^a-zA-Z0-9.]/g, "_");
     const { error: storageError } = await supabase.storage
@@ -341,38 +294,36 @@ confirmUploadBtn.addEventListener("click", async () => {
 
     if (storageError) throw storageError;
 
+    // NOTE: On ne récupère plus l'URL publique ici pour l'insérer en base
+    // C'est le serveur qui gérera l'URL sécurisée au téléchargement.
+    // On peut stocker le path ou laisser null si ton backend le gère.
+    // Pour ton code actuel, on récupère le path public mais on ne le montrera pas aux autres.
     const { data: urlData } = supabase.storage
       .from("pdfs")
       .getPublicUrl(cleanName);
 
-    // 2. Insertion dans la base de données (Table files)
-    // Note: Le fichier est inséré avec le statut 'pending' par défaut (grâce à ton SQL)
     const { data: insertedData, error: dbError } = await supabase
       .from("files")
       .insert([
         {
           name: selectedFile.name,
-          file_url: urlData.publicUrl,
+          file_url: urlData.publicUrl, // Stocké en base, mais ne sera pas SELECT par les autres
           etablissement: info.etab,
           formation: info.formation,
           subject: info.subject,
           prof: info.prof,
           type: info.type,
           year: info.year,
-          // user_id est mis automatiquement
         },
       ])
-      .select(); // .select() est important pour récupérer l'ID du fichier créé
+      .select();
 
     if (dbError) throw dbError;
 
-    // 3. --- ANALYSE IA (Nouveau bloc) ---
     confirmUploadBtn.textContent = "ANALYSE IA...";
     showToast("ANALYSE EN COURS...");
 
-    const insertedFile = insertedData[0]; // On récupère le fichier qu'on vient de créer
-
-    // Appel à l'Edge Function
+    const insertedFile = insertedData[0];
     const { data: verdict, error: aiError } = await supabase.functions.invoke(
       "analyze-document",
       {
@@ -387,25 +338,17 @@ confirmUploadBtn.addEventListener("click", async () => {
 
     if (aiError) {
       console.error("Erreur IA", aiError);
-      showToast("ERREUR ANALYSE (Fichier en attente)");
-      // On ferme quand même la modale, le fichier sera traité plus tard manuellement si besoin
+      showToast("ERREUR ANALYSE (En attente)");
     } else if (verdict.valid) {
       showToast("✅ FICHIER VALIDÉ & PUBLIÉ !");
-      // Le trigger SQL s'occupe de donner les coins, pas besoin de le faire ici
     } else {
       showToast("❌ REFUSÉ : " + verdict.reason);
-      // Le fichier reste en statut 'rejected', il n'apparaîtra pas
     }
 
-    // 4. Nettoyage et Fermeture
     modalUpload.classList.add("hidden");
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
-
-    // On rafraîchit la liste (si le fichier est validé, il apparaîtra, sinon non)
     fetchFiles();
-
-    // On met à jour les coins de l'utilisateur (car il vient peut-être d'en gagner 100)
     await checkUser();
   } catch (error) {
     console.error(error);
@@ -413,6 +356,7 @@ confirmUploadBtn.addEventListener("click", async () => {
     confirmUploadBtn.textContent = "ENVOYER";
   }
 });
+
 function resetAuthForm() {
   authEmailInput.value = "";
   authPassInput.value = "";
@@ -423,7 +367,7 @@ function resetAuthForm() {
 }
 
 // ==========================================
-// --- RECUPERATION DES FICHIERS ---
+// --- RECUPERATION DES FICHIERS (SECURISÉE) ---
 // ==========================================
 
 async function fetchFiles() {
@@ -434,10 +378,14 @@ async function fetchFiles() {
   const filterType = document.getElementById("filter-type").value;
   const filterYear = document.getElementById("filter-year").value;
 
+  // 🔒 SECURITÉ: On ne sélectionne PAS 'file_url' !
+  // On ne prend que ce qui est nécessaire pour l'affichage.
   let query = supabase
     .from("files")
-    .select("*")
-    .eq("status", "approved") // <--- LA LIGNE MAGIQUE POUR FILTRER
+    .select(
+      "id, name, etablissement, formation, subject, prof, type, year, created_at"
+    )
+    .eq("status", "approved")
     .order("created_at", { ascending: false });
 
   if (filterEtab) query = query.eq("etablissement", filterEtab);
@@ -469,38 +417,25 @@ searchButton.addEventListener("click", () => {
   });
 });
 
-// Fonction pour rafraîchir l'interface sans recharger la page
 function refreshProfileUI(newProfileData) {
-  // 1. On met à jour la mémoire locale
   currentUser.profileData = newProfileData;
-
-  // 2. On met à jour le Header (Coins)
   const headerCoins = document.getElementById("user-coins");
   if (headerCoins) {
     headerCoins.textContent = newProfileData.is_premium
       ? "∞"
       : newProfileData.coins;
   }
-
-  // 3. On met à jour la Modale (si elle est ouverte)
   if (!profileModal.classList.contains("hidden")) {
     profileCoins.textContent = newProfileData.coins;
-
     const isPremium = newProfileData.is_premium;
     profileStatus.textContent = isPremium ? "PREMIUM" : "FREEMIUM";
     profileStatus.style.color = isPremium ? "#00aa00" : "inherit";
 
-    // Gestion des boutons (Upgrade vs Gérer)
     const upgradeBtn = document.getElementById("upgrade-btn");
     const manageBtn = document.getElementById("manage-sub-btn");
-
     if (isPremium) {
       if (upgradeBtn) upgradeBtn.style.display = "none";
-      if (manageBtn) {
-        manageBtn.style.display = "inline-block";
-        manageBtn.textContent = "GÉRER ABO";
-        // (On garde le onclick défini dans le listener principal)
-      }
+      if (manageBtn) manageBtn.style.display = "inline-block";
     } else {
       if (manageBtn) manageBtn.style.display = "none";
       if (upgradeBtn) upgradeBtn.style.display = "inline-block";
@@ -510,94 +445,104 @@ function refreshProfileUI(newProfileData) {
 
 function setupRealtimeListener() {
   if (!currentUser) return;
-
   supabase
     .channel("public:profiles")
     .on(
       "postgres_changes",
       {
-        event: "UPDATE", // On écoute uniquement les mises à jour
+        event: "UPDATE",
         schema: "public",
         table: "profiles",
-        filter: `id=eq.${currentUser.id}`, // IMPORTANT : On écoute SEULEMENT notre propre ligne
+        filter: `id=eq.${currentUser.id}`,
       },
       (payload) => {
-        console.log("⚡ Changement détecté !", payload.new);
-
-        // On lance la mise à jour visuelle
         refreshProfileUI(payload.new);
-
-        // Petit bonus : Notification visuelle
         showToast("DONNÉES MISES À JOUR !");
       }
     )
     .subscribe();
 }
 
-// --- 5. AFFICHER TABLEAU (MODIFIÉ POUR SECURITE) ---
+// ==========================================
+// --- AFFICHAGE TABLEAU (SECURISÉ XSS) ---
+// ==========================================
+
 function renderTable(files) {
-  tableBody.innerHTML = "";
+  tableBody.innerHTML = ""; // Vide le tableau
 
   files.forEach((file) => {
     const row = document.createElement("tr");
-    row.innerHTML = `
-            <td>${file.name}</td>
-            <td>${file.subject}</td>
-            <td>${file.type}</td>
-            <td>${file.prof}</td>
-            <td>${file.year}</td>
-            <td><a href="#" class="dl-link" data-id="${file.id}">[DL]</a></td>
-        `;
+
+    // Fonction helper pour créer une cellule textuelle sécurisée
+    // textContent empêche l'injection de HTML (XSS)
+    const createCell = (text) => {
+      const td = document.createElement("td");
+      td.textContent = text || "-";
+      return td;
+    };
+
+    row.appendChild(createCell(file.name));
+    row.appendChild(createCell(file.subject));
+    row.appendChild(createCell(file.type));
+    row.appendChild(createCell(file.prof));
+    row.appendChild(createCell(file.year));
+
+    // Cellule de téléchargement
+    const dlCell = document.createElement("td");
+    const link = document.createElement("a");
+    link.href = "#";
+    link.className = "dl-link";
+    link.textContent = "[DL]";
+
+    // On attache l'objet file entier à l'élément pour l'utiliser au clic
+    // C'est plus propre que dataset pour des objets complexes, mais ici dataset suffit pour l'ID
+    link.dataset.id = file.id;
+
+    // Écouteur d'événement direct (Closure sécurisée)
+    link.addEventListener("click", (e) => handleDownloadClick(e, file.id));
+
+    dlCell.appendChild(link);
+    row.appendChild(dlCell);
+
     tableBody.appendChild(row);
   });
+}
 
-  document.querySelectorAll(".dl-link").forEach((link) => {
-    link.addEventListener("click", async (e) => {
-      e.preventDefault();
+// Fonction séparée pour gérer le téléchargement
+async function handleDownloadClick(e, fileId) {
+  e.preventDefault();
+  const linkElement = e.target;
 
-      if (!currentUser) {
-        showToast("CONNECTE-TOI POUR TELECHARGER !");
-        authModal.classList.remove("hidden");
-        return;
-      }
+  if (!currentUser) {
+    showToast("CONNECTE-TOI POUR TELECHARGER !");
+    authModal.classList.remove("hidden");
+    return;
+  }
 
-      // 1. ASTUCE : On ouvre l'onglet TOUT DE SUITE (avant l'attente)
-      // On met une page blanche ou un petit message d'attente
-      const newTab = window.open("", "_blank");
-      newTab.document.write(
-        "<h1>Chargement du fichier...</h1><p>Vérification de vos coins...</p>"
-      );
+  const newTab = window.open("", "_blank");
+  newTab.document.write(
+    "<h1>Chargement du fichier...</h1><p>Vérification de vos coins...</p>"
+  );
 
-      const fileId = e.target.getAttribute("data-id");
-      e.target.textContent = "...";
+  linkElement.textContent = "...";
 
-      // 2. On fait la requête à Supabase (pendant ce temps, l'onglet est ouvert)
-      const { data, error } = await supabase.rpc("download_file", {
-        file_id: fileId,
-      });
-
-      if (error || (data && data.error)) {
-        // CAS D'ERREUR
-        console.error(error || data.error);
-        showToast(data?.error || "ERREUR SYSTEME");
-        e.target.textContent = "[X]";
-
-        // IMPORTANT : On ferme l'onglet qui ne sert à rien
-        newTab.close();
-      } else {
-        // SUCCÈS
-        showToast("TELECHARGEMENT...");
-        if (data.remaining !== undefined) {
-          document.getElementById("profile-coins").textContent = data.remaining;
-        }
-
-        // 3. On redirige l'onglet ouvert vers le fichier PDF
-        newTab.location.href = data.url;
-
-        e.target.textContent = "[v]";
-      }
-    });
+  const { data, error } = await supabase.rpc("download_file", {
+    file_id: fileId,
   });
+
+  if (error || (data && data.error)) {
+    console.error(error || data.error);
+    showToast(data?.error || "ERREUR SYSTEME");
+    linkElement.textContent = "[X]";
+    newTab.close();
+  } else {
+    showToast("TELECHARGEMENT...");
+    if (data.remaining !== undefined) {
+      document.getElementById("profile-coins").textContent = data.remaining;
+    }
+    newTab.location.href = data.url;
+    linkElement.textContent = "[v]";
+  }
 }
 
 checkUser();
