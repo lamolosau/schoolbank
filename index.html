@@ -27,16 +27,26 @@
       >
         <h1 class="logo">schoolbank</h1>
 
-        <div id="auth-ui" style="display: flex; align-items: center; gap: 10px">
-          <span id="user-display" style="font-size: 0.5rem; display: none"
-            >USER</span
-          >
+        <div id="auth-ui">
           <button
-            id="auth-btn"
+            id="login-btn"
             class="pixel-button small-btn"
             style="margin-top: 0; padding: 0.5rem 1rem; font-size: 0.6rem"
           >
             LOGIN
+          </button>
+
+          <button
+            id="profile-trigger-btn"
+            class="pixel-button small-btn"
+            style="
+              margin-top: 0;
+              padding: 0.5rem 1rem;
+              font-size: 0.6rem;
+              display: none;
+            "
+          >
+            MON PROFIL
           </button>
         </div>
       </header>
@@ -303,6 +313,136 @@
           </button>
           <button id="auth-submit-btn" class="pixel-button small-btn">
             GO
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="profile-modal" class="modal hidden">
+      <div class="modal-content" style="max-width: 400px; text-align: center">
+        <h2>> CARTE_D_ETUDIANT</h2>
+
+        <div
+          style="
+            margin-bottom: 2rem;
+            border: 4px solid var(--text-color);
+            padding: 1rem;
+          "
+        >
+          <div style="font-size: 2rem; margin-bottom: 1rem">[ò_ó]</div>
+
+          <div
+            id="profile-email"
+            style="
+              font-size: 0.6rem;
+              margin-bottom: 1rem;
+              word-break: break-all;
+            "
+          >
+            etudiant@univ.fr
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-around;
+              margin-top: 1.5rem;
+              align-items: flex-start;
+            "
+          >
+            <div
+              style="display: flex; flex-direction: column; align-items: center"
+            >
+              <div style="font-size: 0.5rem; color: #666">SOLDE</div>
+
+              <div
+                id="profile-coins"
+                style="
+                  font-size: 1.5rem;
+                  font-weight: bold;
+                  margin: 10px 0;
+                  line-height: 1.5rem;
+                "
+              >
+                0
+              </div>
+
+              <div style="font-size: 0.4rem; color: #666">COINS</div>
+            </div>
+
+            <div
+              style="display: flex; flex-direction: column; align-items: center"
+            >
+              <div style="font-size: 0.5rem; color: #666">STATUT</div>
+
+              <div
+                id="profile-status"
+                style="
+                  font-size: 0.8rem;
+                  margin: 10px 0;
+                  height: 1.5rem;
+                  display: flex;
+                  align-items: center;
+                "
+              >
+                FREEMIUM
+              </div>
+              <a
+                id="upgrade-btn"
+                href="https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00"
+                target="_blank"
+                class="pixel-button"
+                style="
+                  font-size: 0.5rem;
+                  padding: 5px 10px;
+                  border-width: 2px;
+                  box-shadow: 2px 2px 0px var(--text-color);
+                  text-decoration: none;
+                  display: none; /* Caché par défaut, le JS l'affichera */
+                  margin-top: 5px;
+                  background-color: #000;
+                  color: #fff;
+                "
+              >
+                UPGRADE >
+              </a>
+              <a
+                id="manage-sub-btn"
+                href="https://billing.stripe.com/p/login/test_dRmaEXgQueNd2gocPk7Zu00"
+                target="_blank"
+                class="pixel-button"
+                style="
+                  font-size: 0.5rem;
+                  padding: 5px 10px;
+                  border-width: 2px;
+                  box-shadow: 2px 2px 0px var(--text-color);
+                  text-decoration: none;
+                  display: none;
+                  margin-top: 5px;
+                  background-color: #fff;
+                  color: #000;
+                "
+              >
+                GÉRER ABO
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-buttons" style="flex-direction: column; gap: 10px">
+          <button
+            id="close-profile-btn"
+            class="pixel-button small-btn"
+            style="width: 100%"
+          >
+            RETOUR
+          </button>
+
+          <button
+            id="logout-btn"
+            class="pixel-button small-btn"
+            style="width: 100%; border-style: dashed"
+          >
+            SE DECONNECTER
           </button>
         </div>
       </div>

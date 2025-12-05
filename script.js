@@ -14,8 +14,11 @@ const cancelUploadBtn = document.getElementById("cancel-btn");
 const confirmUploadBtn = document.getElementById("confirm-upload-btn");
 
 // Elements Auth
-const authBtn = document.getElementById("auth-btn");
-const userDisplay = document.getElementById("user-display");
+const loginBtn = document.getElementById("login-btn"); // Ancien auth-btn
+const profileTriggerBtn = document.getElementById("profile-trigger-btn");
+const profileModal = document.getElementById("profile-modal");
+const closeProfileBtn = document.getElementById("close-profile-btn");
+const logoutBtn = document.getElementById("logout-btn");
 const authModal = document.getElementById("auth-modal");
 const authTitle = document.getElementById("auth-title");
 const authEmailInput = document.getElementById("auth-email");
@@ -26,6 +29,11 @@ const toggleAuthModeLink = document.getElementById("toggle-auth-mode");
 
 // Element Toast (Notification)
 const toastElement = document.getElementById("pixel-toast");
+
+// Elements internes à la modale profil
+const profileEmail = document.getElementById("profile-email");
+const profileCoins = document.getElementById("profile-coins");
+const profileStatus = document.getElementById("profile-status");
 
 let selectedFile = null;
 let currentUser = null;
@@ -53,27 +61,155 @@ async function checkUser() {
     data: { session },
   } = await supabase.auth.getSession();
   currentUser = session?.user || null;
+
+  if (currentUser) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .single();
+
+    if (profile) {
+      currentUser.profileData = profile;
+
+      // NOUVEAU : On lance l'écouteur temps réel ici !
+      setupRealtimeListener();
+    }
+  }
   updateAuthUI();
 }
 
 function updateAuthUI() {
   if (currentUser) {
-    authBtn.textContent = "LOGOUT";
-    userDisplay.style.display = "inline";
-    userDisplay.textContent = currentUser.email.split("@")[0];
+    // CONNECTÉ : On cache Login, on affiche Profil
+    if (loginBtn) loginBtn.style.display = "none";
+    if (profileTriggerBtn) profileTriggerBtn.style.display = "inline-block";
   } else {
-    authBtn.textContent = "LOGIN";
-    userDisplay.style.display = "none";
+    // DECONNECTÉ : On affiche Login, on cache Profil
+    if (loginBtn) loginBtn.style.display = "inline-block";
+    if (profileTriggerBtn) profileTriggerBtn.style.display = "none";
   }
 }
 
-authBtn.addEventListener("click", () => {
-  if (currentUser) {
-    signOut();
+// 1. Ouvrir la modale de connexion (Visiteur)
+loginBtn.addEventListener("click", () => {
+  authModal.classList.remove("hidden");
+  resetAuthForm();
+});
+
+// ==========================================
+// --- GESTION DU PROFIL & ABONNEMENT ---
+// ==========================================
+
+profileTriggerBtn.addEventListener("click", () => {
+  // Sécurité : si pas connecté, on ne fait rien
+  if (!currentUser) return;
+
+  // 1. Récupération des éléments HTML de la modale
+  const upgradeBtn = document.getElementById("upgrade-btn");
+  const manageBtn = document.getElementById("manage-sub-btn");
+
+  // Remplissage de l'email
+  profileEmail.textContent = currentUser.email;
+
+  // 2. Remplissage des données (Coins & Statut)
+  if (currentUser.profileData) {
+    profileCoins.textContent = currentUser.profileData.coins;
+
+    const isPremium = currentUser.profileData.is_premium;
+
+    // --- A. GESTION DU TEXTE STATUT ---
+    profileStatus.textContent = isPremium ? "PREMIUM" : "FREEMIUM";
+    // Vert si premium, noir sinon
+    profileStatus.style.color = isPremium ? "#00aa00" : "inherit";
+
+    // --- B. GESTION DES BOUTONS (Bascule) ---
+    if (isPremium) {
+      // === CAS PREMIUM : On affiche "GÉRER ABO" ===
+      if (upgradeBtn) upgradeBtn.style.display = "none";
+      if (manageBtn) {
+        manageBtn.style.display = "inline-block";
+        // Remise à zéro du texte (au cas où il est resté sur "Chargement...")
+        manageBtn.textContent = "GÉRER ABO";
+
+        // LOGIQUE DU PORTAIL CLIENT (Simple et Robuste)
+        // LOGIQUE DU PORTAIL CLIENT (Ouvre dans un nouvel onglet)
+        manageBtn.onclick = async (e) => {
+          e.preventDefault();
+
+          // 1. On ouvre l'onglet TOUT DE SUITE (pour éviter les bloqueurs de pop-up)
+          // On peut mettre un petit message le temps que ça charge
+          const portalTab = window.open("", "_blank");
+          portalTab.document.write(
+            "<html><body style='background:black; color:white; font-family:monospace; display:flex; justify-content:center; align-items:center; height:100vh;'>Chargement du portail Stripe...</body></html>"
+          );
+
+          manageBtn.textContent = "CHARGEMENT...";
+
+          // 2. Appel à l'Edge Function
+          const { data, error } = await supabase.functions.invoke(
+            "create-portal-link"
+          );
+
+          if (error) {
+            console.error("Erreur Supabase:", error);
+            manageBtn.textContent = "ERREUR";
+            showToast("ERREUR PORTAIL");
+
+            // Si ça plante, on ferme l'onglet qui ne sert à rien
+            portalTab.close();
+          } else if (data?.url) {
+            // 3. Succès : On redirige l'onglet déjà ouvert vers la bonne URL
+            portalTab.location.href = data.url;
+
+            // On remet le texte du bouton
+            manageBtn.textContent = "GÉRER ABO";
+          } else {
+            console.error("Erreur:", data);
+            manageBtn.textContent = "ERREUR";
+            showToast("PAS DE COMPTE STRIPE TROUVÉ");
+            portalTab.close();
+          }
+        };
+      }
+    } else {
+      // === CAS FREEMIUM : On affiche "UPGRADE" ===
+      if (manageBtn) manageBtn.style.display = "none";
+
+      if (upgradeBtn) {
+        upgradeBtn.style.display = "inline-block";
+        const baseStripeUrl =
+          "https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00";
+
+        // Construction de l'URL avec les infos utilisateur
+        const customUrl = `${baseStripeUrl}?prefilled_email=${encodeURIComponent(
+          currentUser.email
+        )}&client_reference_id=${currentUser.id}`;
+
+        upgradeBtn.href = customUrl;
+      }
+    }
   } else {
-    authModal.classList.remove("hidden");
-    resetAuthForm();
+    // Cas de chargement ou erreur de profil
+    profileCoins.textContent = "0";
+    profileStatus.textContent = "CHARGEMENT...";
+    if (upgradeBtn) upgradeBtn.style.display = "none";
+    if (manageBtn) manageBtn.style.display = "none";
   }
+
+  // 3. IMPORTANT : On affiche la modale à la fin
+  profileModal.classList.remove("hidden");
+});
+
+// 3. Fermer la modale profil (Bouton Retour)
+closeProfileBtn.addEventListener("click", () => {
+  profileModal.classList.add("hidden");
+});
+
+// 4. Se déconnecter (Bouton dans la modale)
+logoutBtn.addEventListener("click", async () => {
+  profileModal.classList.add("hidden"); // Ferme la modale
+  await signOut(); // Lance la déconnexion Supabase
 });
 
 authCancelBtn.addEventListener("click", () => {
@@ -216,9 +352,11 @@ confirmUploadBtn.addEventListener("click", async () => {
       },
     ]);
 
+    await checkUser();
+
     if (dbError) throw dbError;
 
-    showToast("UPLOAD SUCCESS !"); // Remplacé alert
+    showToast("UPLOAD SUCCESS !");
     modalUpload.classList.add("hidden");
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
@@ -285,37 +423,132 @@ searchButton.addEventListener("click", () => {
   });
 });
 
+// Fonction pour rafraîchir l'interface sans recharger la page
+function refreshProfileUI(newProfileData) {
+  // 1. On met à jour la mémoire locale
+  currentUser.profileData = newProfileData;
+
+  // 2. On met à jour le Header (Coins)
+  const headerCoins = document.getElementById("user-coins");
+  if (headerCoins) {
+    headerCoins.textContent = newProfileData.is_premium
+      ? "∞"
+      : newProfileData.coins;
+  }
+
+  // 3. On met à jour la Modale (si elle est ouverte)
+  if (!profileModal.classList.contains("hidden")) {
+    profileCoins.textContent = newProfileData.coins;
+
+    const isPremium = newProfileData.is_premium;
+    profileStatus.textContent = isPremium ? "PREMIUM" : "FREEMIUM";
+    profileStatus.style.color = isPremium ? "#00aa00" : "inherit";
+
+    // Gestion des boutons (Upgrade vs Gérer)
+    const upgradeBtn = document.getElementById("upgrade-btn");
+    const manageBtn = document.getElementById("manage-sub-btn");
+
+    if (isPremium) {
+      if (upgradeBtn) upgradeBtn.style.display = "none";
+      if (manageBtn) {
+        manageBtn.style.display = "inline-block";
+        manageBtn.textContent = "GÉRER ABO";
+        // (On garde le onclick défini dans le listener principal)
+      }
+    } else {
+      if (manageBtn) manageBtn.style.display = "none";
+      if (upgradeBtn) upgradeBtn.style.display = "inline-block";
+    }
+  }
+}
+
+function setupRealtimeListener() {
+  if (!currentUser) return;
+
+  supabase
+    .channel("public:profiles")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE", // On écoute uniquement les mises à jour
+        schema: "public",
+        table: "profiles",
+        filter: `id=eq.${currentUser.id}`, // IMPORTANT : On écoute SEULEMENT notre propre ligne
+      },
+      (payload) => {
+        console.log("⚡ Changement détecté !", payload.new);
+
+        // On lance la mise à jour visuelle
+        refreshProfileUI(payload.new);
+
+        // Petit bonus : Notification visuelle
+        showToast("DONNÉES MISES À JOUR !");
+      }
+    )
+    .subscribe();
+}
+
 // --- 5. AFFICHER TABLEAU (MODIFIÉ POUR SECURITE) ---
 function renderTable(files) {
   tableBody.innerHTML = "";
 
   files.forEach((file) => {
     const row = document.createElement("tr");
-    // J'ai retiré le href direct et ajouté un attribut 'data-url'
     row.innerHTML = `
             <td>${file.name}</td>
             <td>${file.subject}</td>
             <td>${file.type}</td>
             <td>${file.prof}</td>
             <td>${file.year}</td>
-            <td><a href="#" class="dl-link" data-url="${file.file_url}">[v]</a></td>
+            <td><a href="#" class="dl-link" data-id="${file.id}">[DL]</a></td>
         `;
     tableBody.appendChild(row);
   });
 
-  // On ajoute un écouteur d'événement sur tous les boutons de téléchargement
   document.querySelectorAll(".dl-link").forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault(); // Empêche le lien de s'ouvrir tout seul
+    link.addEventListener("click", async (e) => {
+      e.preventDefault();
 
-      // VERIFICATION DE SECURITE
       if (!currentUser) {
         showToast("CONNECTE-TOI POUR TELECHARGER !");
-        authModal.classList.remove("hidden"); // Ouvre la fenêtre de connexion
+        authModal.classList.remove("hidden");
+        return;
+      }
+
+      // 1. ASTUCE : On ouvre l'onglet TOUT DE SUITE (avant l'attente)
+      // On met une page blanche ou un petit message d'attente
+      const newTab = window.open("", "_blank");
+      newTab.document.write(
+        "<h1>Chargement du fichier...</h1><p>Vérification de vos coins...</p>"
+      );
+
+      const fileId = e.target.getAttribute("data-id");
+      e.target.textContent = "...";
+
+      // 2. On fait la requête à Supabase (pendant ce temps, l'onglet est ouvert)
+      const { data, error } = await supabase.rpc("download_file", {
+        file_id: fileId,
+      });
+
+      if (error || (data && data.error)) {
+        // CAS D'ERREUR
+        console.error(error || data.error);
+        showToast(data?.error || "ERREUR SYSTEME");
+        e.target.textContent = "[X]";
+
+        // IMPORTANT : On ferme l'onglet qui ne sert à rien
+        newTab.close();
       } else {
-        // Si connecté, on ouvre le lien dans un nouvel onglet
-        const url = e.target.getAttribute("data-url");
-        window.open(url, "_blank");
+        // SUCCÈS
+        showToast("TELECHARGEMENT...");
+        if (data.remaining !== undefined) {
+          document.getElementById("profile-coins").textContent = data.remaining;
+        }
+
+        // 3. On redirige l'onglet ouvert vers le fichier PDF
+        newTab.location.href = data.url;
+
+        e.target.textContent = "[v]";
       }
     });
   });
