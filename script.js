@@ -298,6 +298,11 @@ fileInput.addEventListener("change", (e) => {
     modalFilename.textContent = selectedFile.name;
     modalUpload.classList.remove("hidden");
   }
+  if (selectedFile.type !== "application/pdf") {
+    showToast("SEULS LES PDF SONT ACCEPTÉS !");
+    fileInput.value = ""; // Reset
+    return;
+  }
 });
 
 cancelUploadBtn.addEventListener("click", () => {
@@ -310,7 +315,7 @@ confirmUploadBtn.addEventListener("click", async () => {
   if (!selectedFile) return;
 
   if (!currentUser) {
-    showToast("ERREUR: NON CONNECTE"); // Remplacé alert
+    showToast("ERREUR: NON CONNECTE");
     return;
   }
 
@@ -327,6 +332,7 @@ confirmUploadBtn.addEventListener("click", async () => {
   confirmUploadBtn.textContent = "ENVOI...";
 
   try {
+    // 1. Upload du fichier physique (Storage)
     const cleanName =
       Date.now() + "_" + selectedFile.name.replace(/[^a-zA-Z0-9.]/g, "_");
     const { error: storageError } = await supabase.storage
@@ -339,35 +345,73 @@ confirmUploadBtn.addEventListener("click", async () => {
       .from("pdfs")
       .getPublicUrl(cleanName);
 
-    const { error: dbError } = await supabase.from("files").insert([
-      {
-        name: selectedFile.name,
-        file_url: urlData.publicUrl,
-        etablissement: info.etab,
-        formation: info.formation,
-        subject: info.subject,
-        prof: info.prof,
-        type: info.type,
-        year: info.year,
-      },
-    ]);
-
-    await checkUser();
+    // 2. Insertion dans la base de données (Table files)
+    // Note: Le fichier est inséré avec le statut 'pending' par défaut (grâce à ton SQL)
+    const { data: insertedData, error: dbError } = await supabase
+      .from("files")
+      .insert([
+        {
+          name: selectedFile.name,
+          file_url: urlData.publicUrl,
+          etablissement: info.etab,
+          formation: info.formation,
+          subject: info.subject,
+          prof: info.prof,
+          type: info.type,
+          year: info.year,
+          // user_id est mis automatiquement
+        },
+      ])
+      .select(); // .select() est important pour récupérer l'ID du fichier créé
 
     if (dbError) throw dbError;
 
-    showToast("UPLOAD SUCCESS !");
+    // 3. --- ANALYSE IA (Nouveau bloc) ---
+    confirmUploadBtn.textContent = "ANALYSE IA...";
+    showToast("ANALYSE EN COURS...");
+
+    const insertedFile = insertedData[0]; // On récupère le fichier qu'on vient de créer
+
+    // Appel à l'Edge Function
+    const { data: verdict, error: aiError } = await supabase.functions.invoke(
+      "analyze-document",
+      {
+        body: {
+          fileId: insertedFile.id,
+          fileUrl: urlData.publicUrl,
+          metadata: info,
+        },
+      }
+    );
+
+    if (aiError) {
+      console.error("Erreur IA", aiError);
+      showToast("ERREUR ANALYSE (Fichier en attente)");
+      // On ferme quand même la modale, le fichier sera traité plus tard manuellement si besoin
+    } else if (verdict.valid) {
+      showToast("✅ FICHIER VALIDÉ & PUBLIÉ !");
+      // Le trigger SQL s'occupe de donner les coins, pas besoin de le faire ici
+    } else {
+      showToast("❌ REFUSÉ : " + verdict.reason);
+      // Le fichier reste en statut 'rejected', il n'apparaîtra pas
+    }
+
+    // 4. Nettoyage et Fermeture
     modalUpload.classList.add("hidden");
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
+
+    // On rafraîchit la liste (si le fichier est validé, il apparaîtra, sinon non)
     fetchFiles();
+
+    // On met à jour les coins de l'utilisateur (car il vient peut-être d'en gagner 100)
+    await checkUser();
   } catch (error) {
     console.error(error);
-    showToast("ERREUR UPLOAD..."); // Remplacé alert
+    showToast("ERREUR UPLOAD...");
     confirmUploadBtn.textContent = "ENVOYER";
   }
 });
-
 function resetAuthForm() {
   authEmailInput.value = "";
   authPassInput.value = "";
@@ -392,6 +436,7 @@ async function fetchFiles() {
   let query = supabase
     .from("files")
     .select("*")
+    .eq("status", "approved") // <--- LA LIGNE MAGIQUE POUR FILTRER
     .order("created_at", { ascending: false });
 
   if (filterEtab) query = query.eq("etablissement", filterEtab);
