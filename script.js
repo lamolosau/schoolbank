@@ -1,5 +1,12 @@
 // --- INIT SUPABASE ---
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// On vérifie si supabase existe déjà, sinon on le crée
+var supabase;
+
+if (window.supabase && window.supabase.createClient) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+  console.error("La bibliothèque Supabase n'est pas chargée !");
+}
 
 // --- ELEMENTS ---
 const fileInput = document.getElementById("file-upload-input");
@@ -55,12 +62,14 @@ function showToast(message) {
 // ==========================================
 
 async function checkUser() {
+  // 1. Récupérer la session
   const {
     data: { session },
   } = await supabase.auth.getSession();
   currentUser = session?.user || null;
 
   if (currentUser) {
+    // 2. Récupérer les infos du profil (Coins, Premium...)
     const { data: profile } = await supabase
       .from("profiles")
       .select("*")
@@ -69,9 +78,25 @@ async function checkUser() {
 
     if (profile) {
       currentUser.profileData = profile;
-      setupRealtimeListener();
+      refreshProfileUI(profile); // Met à jour l'UI immédiatement
     }
+
+    // 3. Récupérer les achats (Pour les boutons ACCÉDER)
+    const { data: purchases } = await supabase
+      .from("purchases")
+      .select("file_id")
+      .eq("user_id", currentUser.id);
+
+    // On stocke les IDs des fichiers achetés
+    currentUser.owned_files = purchases ? purchases.map((p) => p.file_id) : [];
+
+    setupRealtimeListener();
+  } else {
+    // Si pas connecté, on nettoie
+    if (profileCoins) profileCoins.textContent = "0";
+    if (profileStatus) profileStatus.textContent = "...";
   }
+
   updateAuthUI();
 }
 
@@ -204,21 +229,25 @@ authSubmitBtn.addEventListener("click", async () => {
 
   try {
     if (isLoginMode) {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      currentUser = data.user;
       showToast("CONNEXION REUSSIE !");
     } else {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      currentUser = data.user;
-      showToast("COMPTE CREE !");
+      showToast("COMPTE CREE ! VERIFIE TES EMAILS.");
     }
+
     authModal.classList.add("hidden");
-    updateAuthUI();
+
+    // --- C'EST ICI LA MAGIE ---
+    showToast("CHARGEMENT PROFIL...");
+    await checkUser(); // On attend d'avoir chargé le profil et les achats
+    fetchFiles(); // On redessine le tableau avec les boutons verts "ACCÉDER"
+    // -------------------------
   } catch (error) {
     console.error(error);
     showToast("ERREUR: " + error.message);
@@ -231,9 +260,24 @@ async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (!error) {
     currentUser = null;
+
+    // Mise à zéro visuelle immédiate
+    document.getElementById("profile-coins").textContent = "0";
+    document.getElementById("profile-status").textContent = "DECONNECTÉ";
+
     updateAuthUI();
+    fetchFiles(); // Recharge le tableau pour enlever les boutons "ACCÉDER"
     showToast("DECONNECTE.");
   }
+}
+
+// Fonction pour calculer l'empreinte numérique (Hash) d'un fichier
+async function calculateFileHash(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ==========================================
@@ -273,6 +317,7 @@ cancelUploadBtn.addEventListener("click", () => {
 confirmUploadBtn.addEventListener("click", async () => {
   if (!selectedFile || !currentUser) return;
 
+  // Récupération des données du formulaire
   const info = {
     etab: document.getElementById("input-etab").value,
     formation: document.getElementById("input-formation").value,
@@ -283,76 +328,117 @@ confirmUploadBtn.addEventListener("click", async () => {
     year: document.getElementById("input-year").value,
   };
 
-  confirmUploadBtn.textContent = "ENVOI...";
+  confirmUploadBtn.textContent = "VERIFICATION...";
 
   try {
+    // 1. CALCUL DU HASH (Anti-Doublon Local)
+    const fileHash = await calculateFileHash(selectedFile);
+
+    // 2. VERIFICATION EN BASE (Est-ce qu'on l'a déjà ?)
+    const { data: existingFile } = await supabase
+      .from("files")
+      .select("id")
+      .eq("file_hash", fileHash)
+      .maybeSingle();
+
+    if (existingFile) {
+      showToast("❌ FICHIER DÉJÀ PRÉSENT DANS LA BANQUE !");
+      confirmUploadBtn.textContent = "ENVOYER";
+      return; // On arrête tout ici
+    }
+
+    // 3. UPLOAD PHYSIQUE (Nécessaire pour que l'IA puisse le lire)
+    confirmUploadBtn.textContent = "ENVOI...";
     const cleanName =
       Date.now() + "_" + selectedFile.name.replace(/[^a-zA-Z0-9.]/g, "_");
+
     const { error: storageError } = await supabase.storage
       .from("pdfs")
       .upload(cleanName, selectedFile);
 
     if (storageError) throw storageError;
 
-    // NOTE: On ne récupère plus l'URL publique ici pour l'insérer en base
-    // C'est le serveur qui gérera l'URL sécurisée au téléchargement.
-    // On peut stocker le path ou laisser null si ton backend le gère.
-    // Pour ton code actuel, on récupère le path public mais on ne le montrera pas aux autres.
+    // Récupération de l'URL publique pour l'IA
     const { data: urlData } = supabase.storage
       .from("pdfs")
       .getPublicUrl(cleanName);
+    const publicUrl = urlData.publicUrl;
 
-    const { data: insertedData, error: dbError } = await supabase
-      .from("files")
-      .insert([
-        {
-          name: selectedFile.name,
-          file_url: urlData.publicUrl, // Stocké en base, mais ne sera pas SELECT par les autres
-          etablissement: info.etab,
-          formation: info.formation,
-          subject: info.subject,
-          prof: info.prof,
-          type: info.type,
-          year: info.year,
-        },
-      ])
-      .select();
-
-    if (dbError) throw dbError;
-
+    // 4. ANALYSE IA & VERIFICATION DE COHERENCE
     confirmUploadBtn.textContent = "ANALYSE IA...";
-    showToast("ANALYSE EN COURS...");
+    showToast("L'IA VÉRIFIE VOTRE FICHIER...");
 
-    const insertedFile = insertedData[0];
-    const { data: verdict, error: aiError } = await supabase.functions.invoke(
+    // On appelle ta Edge Function 'analyze-document'
+    // Elle doit comparer le contenu du PDF avec 'info' (tes inputs)
+    const { data: analysis, error: aiError } = await supabase.functions.invoke(
       "analyze-document",
       {
         body: {
-          fileId: insertedFile.id,
-          fileUrl: urlData.publicUrl,
-          filePath: cleanName,
-          metadata: info,
+          fileUrl: publicUrl,
+          userInputs: info, // On envoie ce que l'user prétend que c'est
         },
       }
     );
 
     if (aiError) {
-      console.error("Erreur IA", aiError);
-      showToast("ERREUR ANALYSE (En attente)");
-    } else if (verdict.valid) {
-      showToast("✅ FICHIER VALIDÉ & PUBLIÉ !");
-    } else {
-      showToast("❌ REFUSÉ : " + verdict.reason);
+      console.error("Erreur IA:", aiError);
+      // En cas d'erreur technique IA, on supprime le fichier par sécurité ?
+      // Ou on accepte manuellement ? Ici je choisis la sécurité : on annule.
+      await supabase.storage.from("pdfs").remove([cleanName]);
+      showToast("ERREUR IA : UPLOAD ANNULÉ");
+      confirmUploadBtn.textContent = "ENVOYER";
+      return;
     }
 
+    // 5. VERDICT DE L'IA
+    if (!analysis.valid) {
+      // SI C'EST UN FAUX OU INCOHÉRENT :
+      showToast(`❌ REFUSÉ : ${analysis.reason}`);
+      // On supprime immédiatement le fichier du stockage ("Poubelle")
+      await supabase.storage.from("pdfs").remove([cleanName]);
+      confirmUploadBtn.textContent = "ENVOYER";
+      return;
+    }
+
+    // 6. SUCCÈS : INSERTION EN BASE (Seulement si tout est bon)
+    const { error: dbError } = await supabase.from("files").insert([
+      {
+        name: selectedFile.name,
+        user_id: currentUser.id, // <--- IMPORTANT : Lier le fichier à l'utilisateur
+        file_url: urlData.publicUrl,
+        file_hash: fileHash,
+        etablissement: info.etab,
+        formation: info.formation,
+        subject: info.subject,
+        prof: info.prof,
+        type: info.type,
+        year: info.year,
+        status: "approved", // <--- INDISPENSABLE : Pour qu'il s'affiche
+      },
+    ]);
+
+    if (dbError) throw dbError;
+
+    showToast("✅ FICHIER VALIDÉ ET PUBLIÉ !");
     modalUpload.classList.add("hidden");
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
-    fetchFiles();
+
+    // --- AJOUT : REMISE À ZÉRO DES FILTRES ---
+    document.getElementById("filter-etab").value = "";
+    document.getElementById("filter-formation").value = "";
+    document.getElementById("filter-subject").value = "";
+    document.getElementById("filter-type").value = "";
+    document.getElementById("filter-year").value = "";
+    document.getElementById("filter-prof").value = "";
+    // -----------------------------------------
+
+    // Rafraîchissement automatique
     await checkUser();
+    await fetchFiles();
   } catch (error) {
     console.error(error);
-    showToast("ERREUR UPLOAD...");
+    showToast("ERREUR TECHNIQUE...");
     confirmUploadBtn.textContent = "ENVOYER";
   }
 });
@@ -492,58 +578,103 @@ function renderTable(files) {
     const link = document.createElement("a");
     link.href = "#";
     link.className = "dl-link";
-    link.textContent = "[DL]";
 
-    // On attache l'objet file entier à l'élément pour l'utiliser au clic
-    // C'est plus propre que dataset pour des objets complexes, mais ici dataset suffit pour l'ID
+    // --- LOGIQUE D'AFFICHAGE DU BOUTON ---
+    // On vérifie si l'ID du fichier actuel est dans les fichiers possédés
+    const isOwned = currentUser?.owned_files?.includes(file.id);
+
+    if (isOwned) {
+      link.textContent = "[ACCÉDER]";
+      link.classList.add("owned");
+      link.style.color = "#008800"; // Vert foncé
+    } else {
+      link.textContent = "[ACHETER - 50c]";
+    }
+    // -------------------------------------
+
     link.dataset.id = file.id;
-
-    // Écouteur d'événement direct (Closure sécurisée)
     link.addEventListener("click", (e) => handleDownloadClick(e, file.id));
 
     dlCell.appendChild(link);
     row.appendChild(dlCell);
-
     tableBody.appendChild(row);
   });
 }
 
-// Fonction séparée pour gérer le téléchargement
+let currentPurchaseFileId = null; // Pour stocker l'ID du fichier en cours d'achat
+
 async function handleDownloadClick(e, fileId) {
   e.preventDefault();
   const linkElement = e.target;
 
   if (!currentUser) {
-    showToast("CONNECTE-TOI POUR TELECHARGER !");
+    showToast("CONNECTE-TOI POUR ACCÉDER !");
     authModal.classList.remove("hidden");
     return;
   }
 
-  const newTab = window.open("", "_blank");
-  newTab.document.write(
-    "<h1>Chargement du fichier...</h1><p>Vérification de vos coins...</p>"
-  );
+  // Vérifie si le bouton affiche déjà "ACCÉDER"
+  const isAlreadyOwned = linkElement.textContent.includes("ACCÉDER");
 
-  linkElement.textContent = "...";
-
-  const { data, error } = await supabase.rpc("download_file", {
-    file_id: fileId,
-  });
-
-  if (error || (data && data.error)) {
-    console.error(error || data.error);
-    showToast(data?.error || "ERREUR SYSTEME");
-    linkElement.textContent = "[X]";
-    newTab.close();
+  if (isAlreadyOwned) {
+    // Si déjà possédé, on lance directement le téléchargement
+    executeDownload(fileId, linkElement);
   } else {
-    showToast("TELECHARGEMENT...");
-    if (data.remaining !== undefined) {
-      document.getElementById("profile-coins").textContent = data.remaining;
-    }
-    newTab.location.href = data.url;
-    linkElement.textContent = "[v]";
+    // Sinon, on ouvre la modale de confirmation personnalisée
+    currentPurchaseFileId = fileId;
+    const purchaseModal = document.getElementById("purchase-modal");
+    purchaseModal.classList.remove("hidden");
+
+    // On lie l'élément du lien pour pouvoir le modifier après l'achat
+    window.lastClickedLink = linkElement;
   }
 }
 
-checkUser();
-fetchFiles();
+// Fonction qui fait l'appel réel à Supabase
+async function executeDownload(fileId, linkElement) {
+  const originalText = linkElement.textContent;
+  linkElement.textContent = "...";
+
+  // Conversion explicite en nombre pour correspondre au type BIGINT de la base
+  const cleanId = parseInt(fileId, 10);
+
+  const { data, error } = await supabase.rpc("download_file", {
+    p_file_id: cleanId, // Assure-toi que c'est bien p_file_id ici
+  });
+
+  if (error || (data && data.error)) {
+    console.error("Erreur détaillée:", error || data.error);
+    showToast(data?.error || "ERREUR DE TRANSACTION");
+    linkElement.textContent = originalText;
+  } else {
+    showToast("OUVERTURE...");
+    if (data.remaining !== undefined) {
+      document.getElementById("profile-coins").textContent = data.remaining;
+    }
+    window.open(data.url, "_blank");
+    if (currentUser && !currentUser.owned_files.includes(cleanId)) {
+      currentUser.owned_files.push(cleanId); // On l'ajoute à la liste locale
+    }
+    // Transforme le bouton en vert foncé "ACCÉDER"
+    linkElement.textContent = "[ACCÉDER]";
+    linkElement.classList.add("owned");
+  }
+}
+
+// Gestionnaires pour les boutons de la modale de confirmation
+document.getElementById("cancel-purchase-btn").addEventListener("click", () => {
+  document.getElementById("purchase-modal").classList.add("hidden");
+});
+
+document
+  .getElementById("confirm-purchase-btn")
+  .addEventListener("click", async () => {
+    document.getElementById("purchase-modal").classList.add("hidden");
+    if (currentPurchaseFileId && window.lastClickedLink) {
+      await executeDownload(currentPurchaseFileId, window.lastClickedLink);
+    }
+  });
+
+checkUser().then(() => {
+  fetchFiles();
+});

@@ -319,3 +319,13 @@ h2 {
     opacity: 0;
   }
 }
+
+/* Couleur pour le bouton après achat ou lors du survol d'achat */
+.dl-link.owned {
+  color: #008800; /* Vert plus foncé */
+}
+
+.dl-link:hover {
+  background-color: var(--text-color);
+  color: var(--bg-color);
+}
