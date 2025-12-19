@@ -411,6 +411,7 @@ function renderTable(files) {
   tableBody.innerHTML = "";
   files.forEach((file) => {
     const row = document.createElement("tr");
+
     const createCell = (text) => {
       const td = document.createElement("td");
       td.textContent = text || "-";
@@ -444,6 +445,18 @@ function renderTable(files) {
     link.addEventListener("click", (e) => handleDownloadClick(e, file.id));
     dlCell.appendChild(link);
     row.appendChild(dlCell);
+
+    const reportCell = document.createElement("td");
+    const reportBtn = document.createElement("button");
+    reportBtn.className = "report-btn";
+    reportBtn.textContent = "!";
+    reportBtn.title = "Signaler ce fichier";
+
+    reportBtn.onclick = () => openReportModal(file.id);
+
+    reportCell.appendChild(reportBtn);
+    row.appendChild(reportCell);
+
     tableBody.appendChild(row);
   });
 }
@@ -513,3 +526,63 @@ document
 checkUser().then(() => {
   fetchFiles();
 });
+
+// ==========================================
+// --- GESTION DES SIGNALEMENTS (REPORT) ---
+// ==========================================
+
+let currentReportFileId = null;
+const reportModal = document.getElementById("report-modal");
+const reportDetailsInput = document.getElementById("report-details");
+const reportReasonSelect = document.getElementById("report-reason-select");
+
+function openReportModal(fileId) {
+  if (!currentUser) {
+    showToast("CONNECTE-TOI POUR SIGNALER !");
+    authModal.classList.remove("hidden");
+    return;
+  }
+  currentReportFileId = fileId;
+  reportDetailsInput.value = ""; // Vider le champ texte
+  reportModal.classList.remove("hidden");
+}
+
+document.getElementById("cancel-report-btn").addEventListener("click", () => {
+  reportModal.classList.add("hidden");
+  currentReportFileId = null;
+});
+
+document
+  .getElementById("confirm-report-btn")
+  .addEventListener("click", async () => {
+    if (!currentReportFileId || !currentUser) return;
+
+    const reason = reportReasonSelect.value;
+    const details = reportDetailsInput.value.trim();
+
+    // On combine le menu déroulant et le texte libre
+    const fullReason = `${reason} - ${details}`;
+
+    const btn = document.getElementById("confirm-report-btn");
+    btn.textContent = "...";
+
+    try {
+      const { error } = await supabase.from("reports").insert([
+        {
+          file_id: currentReportFileId,
+          user_id: currentUser.id,
+          reason: fullReason,
+        },
+      ]);
+
+      if (error) throw error;
+
+      showToast("SIGNALEMENT ENVOYÉ. MERCI !");
+      reportModal.classList.add("hidden");
+    } catch (error) {
+      console.error("Erreur Report:", error);
+      showToast("ERREUR LORS DE L'ENVOI");
+    } finally {
+      btn.textContent = "SIGNALER";
+    }
+  });

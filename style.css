@@ -283,3 +283,31 @@ h2 {
     opacity: 0;
   }
 }
+
+.report-btn {
+  background-color: #ff4444;
+  color: white;
+  border: 2px solid black;
+  width: 30px;
+  height: 30px;
+  font-family: "Press Start 2P", cursive;
+  font-size: 1rem;
+  line-height: 1rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.report-btn:hover {
+  background-color: #ff0000;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px black;
+}
+
+.report-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px black;
+}

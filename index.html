@@ -65,42 +65,112 @@
             <label>ETABLISSEMENT</label>
             <select id="filter-etab" class="pixel-input">
               <option value="">TOUS</option>
-              <option value="artois">UNIVERSITÉ D'ARTOIS</option>
-              <option value="lille">UNIVERSITÉ DE LILLE</option>
+              <optgroup label="UNIVERSITÉS PUBLIQUES">
+                <option value="lille">UNIVERSITÉ DE LILLE</option>
+                <option value="artois">UNIVERSITÉ D'ARTOIS</option>
+                <option value="uphf">UPHF (VALENCIENNES)</option>
+                <option value="ulco">ULCO (CÔTE D'OPALE)</option>
+                <option value="picardie">UPJV (AMIENS)</option>
+              </optgroup>
+              <optgroup label="PRIVÉ & GRANDES ÉCOLES">
+                <option value="catholille">CATHOLIQUE DE LILLE</option>
+                <option value="centralelille">CENTRALE LILLE</option>
+                <option value="imt">IMT NORD EUROPE</option>
+                <option value="skema">SKEMA BUSINESS SCHOOL</option>
+                <option value="ieseg">IÉSEG</option>
+                <option value="edhec">EDHEC</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="filter-group">
             <label>FORMATION</label>
             <select id="filter-formation" class="pixel-input">
               <option value="">TOUTES</option>
-              <option value="licence_info">LICENCE INFORMATIQUE</option>
-              <option value="licence_sv">LICENCE SV</option>
-              <option value="licence_chimie">LICENCE CHIMIE</option>
-              <option value="licence_mathematiques">
-                LICENCE MATHEMATIQUES
-              </option>
-              <option value="licence_droit">LICENCE DROIT</option>
-              <option value="licence_histoire">LICENCE HISTOIRE</option>
-              <option value="licence_lettres">LICENCE LETTRES</option>
+              <optgroup label="SCIENCES & TECH">
+                <option value="licence_info">LICENCE INFORMATIQUE</option>
+                <option value="licence_mi">LICENCE MATHS-INFO</option>
+                <option value="licence_maths">LICENCE MATHÉMATIQUES</option>
+                <option value="licence_physique">
+                  LICENCE PHYSIQUE-CHIMIE
+                </option>
+                <option value="licence_svt">LICENCE SVT / BIO</option>
+                <option value="but_info">BUT INFORMATIQUE</option>
+              </optgroup>
+              <optgroup label="DROIT, ÉCO & GESTION">
+                <option value="licence_droit">LICENCE DE DROIT</option>
+                <option value="licence_eco">LICENCE ÉCO-GESTION</option>
+                <option value="licence_aes">LICENCE AES</option>
+                <option value="licence_scpol">LICENCE SCIENCE PO</option>
+              </optgroup>
+              <optgroup label="LETTRES & SHS">
+                <option value="licence_psy">LICENCE PSYCHOLOGIE</option>
+                <option value="licence_socio">LICENCE SOCIOLOGIE</option>
+                <option value="licence_anglais">LICENCE LLCER ANGLAIS</option>
+                <option value="licence_lettres">
+                  LICENCE LETTRES MODERNES
+                </option>
+                <option value="licence_histoire">LICENCE HISTOIRE</option>
+              </optgroup>
+              <optgroup label="SANTÉ & SPORT">
+                <option value="pass_las">PASS / LAS (SANTÉ)</option>
+                <option value="licence_staps">LICENCE STAPS</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="filter-group">
             <label>MATIERE</label>
             <select id="filter-subject" class="pixel-input">
               <option value="">TOUTES</option>
-              <option value="momi">MOMI</option>
-              <option value="calculus">CALCULUS</option>
-              <option value="algo1">ALGO 1</option>
-              <option value="algo2">ALGO 2</option>
-              <option value="algo3">ALGO 3</option>
-              <option value="algo4">ALGO 4</option>
-              <option value="archi1">ARCHITECTURE 1</option>
-              <option value="archi2">ARCHITECTURE 2</option>
-              <option value="algebre">ALGEBRE LINEAIRE</option>
-              <option value="unix">UNIX</option>
-              <option value="anglais">ANGLAIS</option>
+
+              <optgroup label="INFORMATIQUE / MATHS">
+                <option value="algo">ALGORITHMIQUE & PROG</option>
+                <option value="bdd">BASES DE DONNÉES (SQL)</option>
+                <option value="web">DEV WEB (HTML/CSS/JS)</option>
+                <option value="poo">PROG ORIENTÉE OBJET</option>
+                <option value="systeme">SYSTÈMES & RÉSEAUX</option>
+                <option value="analyse">ANALYSE (MATHS)</option>
+                <option value="algebre">ALGÈBRE LINÉAIRE</option>
+                <option value="stats">PROBAS & STATISTIQUES</option>
+              </optgroup>
+
+              <optgroup label="DROIT / ÉCO">
+                <option value="droit_constit">DROIT CONSTITUTIONNEL</option>
+                <option value="droit_civil">DROIT CIVIL / FAMILLE</option>
+                <option value="droit_admin">DROIT ADMINISTRATIF</option>
+                <option value="droit_penal">DROIT PÉNAL</option>
+                <option value="droit_affaires">DROIT DES AFFAIRES</option>
+                <option value="micro_eco">MICRO-ÉCONOMIE</option>
+                <option value="macro_eco">MACRO-ÉCONOMIE</option>
+                <option value="compta">COMPTABILITÉ</option>
+                <option value="marketing">MARKETING</option>
+              </optgroup>
+
+              <optgroup label="SCIENCES (SVT/PHYSIQUE)">
+                <option value="biocell">BIOLOGIE CELLULAIRE</option>
+                <option value="genetique">GÉNÉTIQUE</option>
+                <option value="chimie_orga">CHIMIE ORGANIQUE</option>
+                <option value="meca">MÉCANIQUE</option>
+                <option value="thermo">THERMODYNAMIQUE</option>
+                <option value="optique">OPTIQUE</option>
+                <option value="anatomie">ANATOMIE</option>
+              </optgroup>
+
+              <optgroup label="SHS / LANGUES">
+                <option value="psy_cognitive">PSYCHOLOGIE COGNITIVE</option>
+                <option value="psy_clinique">PSYCHOLOGIE CLINIQUE</option>
+                <option value="socio">SOCIOLOGIE GÉNÉRALE</option>
+                <option value="histoire_contemp">HISTOIRE CONTEMPORAINE</option>
+                <option value="histoire_medievale">HISTOIRE MÉDIÉVALE</option>
+                <option value="geographie">GÉOGRAPHIE</option>
+                <option value="grammaire">GRAMMAIRE / LINGUISTIQUE</option>
+                <option value="traduction">TRADUCTION (THÈME/VERSION)</option>
+                <option value="anglais">ANGLAIS (LVE)</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="filter-group">
             <label>PROFESSEUR</label>
             <input
@@ -110,16 +180,19 @@
               placeholder="NOM DU PROF..."
             />
           </div>
+
           <div class="filter-group">
             <label>TYPE</label>
             <select id="filter-type" class="pixel-input">
               <option value="">TOUS</option>
-              <option value="exam">EXAMEN</option>
-              <option value="cc">CC</option>
-              <option value="td">TD</option>
-              <option value="tp">TP</option>
+              <option value="exam">EXAMEN / PARTIEL</option>
+              <option value="cc">CC (CONTRÔLE CONTINU)</option>
+              <option value="td">TD (TRAVAUX DIRIGÉS)</option>
+              <option value="tp">TP (TRAVAUX PRATIQUES)</option>
+              <option value="cm">COURS MAGISTRAL</option>
             </select>
           </div>
+
           <div class="filter-group">
             <label>ANNEE</label>
             <select id="filter-year" class="pixel-input">
@@ -133,6 +206,9 @@
               <option value="2020">2020</option>
               <option value="2019">2019</option>
               <option value="2018">2018</option>
+              <option value="2017">2017</option>
+              <option value="2016">2016</option>
+              <option value="2015">2015</option>
             </select>
           </div>
         </div>
@@ -151,6 +227,7 @@
                 <th>PROF</th>
                 <th>ANNEE</th>
                 <th>DL</th>
+                <th>!</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -170,40 +247,109 @@
           <div class="form-group">
             <label>ETABLISSEMENT</label>
             <select id="input-etab" class="pixel-input">
-              <option value="artois">UNIVERSITÉ D'ARTOIS</option>
-              <option value="lille">UNIVERSITÉ DE LILLE</option>
+              <optgroup label="UNIVERSITÉS PUBLIQUES">
+                <option value="lille">UNIVERSITÉ DE LILLE</option>
+                <option value="artois">UNIVERSITÉ D'ARTOIS</option>
+                <option value="uphf">UPHF (VALENCIENNES)</option>
+                <option value="ulco">ULCO (CÔTE D'OPALE)</option>
+                <option value="picardie">UPJV (AMIENS)</option>
+              </optgroup>
+              <optgroup label="PRIVÉ & GRANDES ÉCOLES">
+                <option value="catholille">CATHOLIQUE DE LILLE</option>
+                <option value="centralelille">CENTRALE LILLE</option>
+                <option value="imt">IMT NORD EUROPE</option>
+                <option value="skema">SKEMA BUSINESS SCHOOL</option>
+                <option value="ieseg">IÉSEG</option>
+                <option value="edhec">EDHEC</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="form-group">
             <label>FORMATION</label>
             <select id="input-formation" class="pixel-input">
-              <option value="licence_info">LICENCE INFORMATIQUE</option>
-              <option value="licence_sv">LICENCE SV</option>
-              <option value="licence_chimie">LICENCE CHIMIE</option>
-              <option value="licence_mathematiques">
-                LICENCE MATHEMATIQUES
-              </option>
-              <option value="licence_droit">LICENCE DROIT</option>
-              <option value="licence_histoire">LICENCE HISTOIRE</option>
-              <option value="licence_lettres">LICENCE LETTRES</option>
+              <optgroup label="SCIENCES & TECH">
+                <option value="licence_info">LICENCE INFORMATIQUE</option>
+                <option value="licence_mi">LICENCE MATHS-INFO</option>
+                <option value="licence_maths">LICENCE MATHÉMATIQUES</option>
+                <option value="licence_physique">
+                  LICENCE PHYSIQUE-CHIMIE
+                </option>
+                <option value="licence_svt">LICENCE SVT / BIO</option>
+                <option value="but_info">BUT INFORMATIQUE</option>
+              </optgroup>
+              <optgroup label="DROIT, ÉCO & GESTION">
+                <option value="licence_droit">LICENCE DE DROIT</option>
+                <option value="licence_eco">LICENCE ÉCO-GESTION</option>
+                <option value="licence_aes">LICENCE AES</option>
+                <option value="licence_scpol">LICENCE SCIENCE PO</option>
+              </optgroup>
+              <optgroup label="LETTRES & SHS">
+                <option value="licence_psy">LICENCE PSYCHOLOGIE</option>
+                <option value="licence_socio">LICENCE SOCIOLOGIE</option>
+                <option value="licence_anglais">LICENCE LLCER ANGLAIS</option>
+                <option value="licence_lettres">
+                  LICENCE LETTRES MODERNES
+                </option>
+                <option value="licence_histoire">LICENCE HISTOIRE</option>
+              </optgroup>
+              <optgroup label="SANTÉ & SPORT">
+                <option value="pass_las">PASS / LAS (SANTÉ)</option>
+                <option value="licence_staps">LICENCE STAPS</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="form-group">
             <label>MATIERE</label>
             <select id="input-subject" class="pixel-input">
-              <option value="momi">MOMI</option>
-              <option value="calculus">CALCULUS</option>
-              <option value="algo1">ALGO 1</option>
-              <option value="algo2">ALGO 2</option>
-              <option value="algo3">ALGO 3</option>
-              <option value="algo4">ALGO 4</option>
-              <option value="archi1">ARCHITECTURE 1</option>
-              <option value="archi2">ARCHITECTURE 2</option>
-              <option value="algebre">ALGEBRE LINEAIRE</option>
-              <option value="unix">UNIX</option>
-              <option value="anglais">ANGLAIS</option>
+              <optgroup label="INFORMATIQUE / MATHS">
+                <option value="algo">ALGORITHMIQUE & PROG</option>
+                <option value="bdd">BASES DE DONNÉES (SQL)</option>
+                <option value="web">DEV WEB (HTML/CSS/JS)</option>
+                <option value="poo">PROG ORIENTÉE OBJET</option>
+                <option value="systeme">SYSTÈMES & RÉSEAUX</option>
+                <option value="analyse">ANALYSE (MATHS)</option>
+                <option value="algebre">ALGÈBRE LINÉAIRE</option>
+                <option value="stats">PROBAS & STATISTIQUES</option>
+              </optgroup>
+
+              <optgroup label="DROIT / ÉCO">
+                <option value="droit_constit">DROIT CONSTITUTIONNEL</option>
+                <option value="droit_civil">DROIT CIVIL / FAMILLE</option>
+                <option value="droit_admin">DROIT ADMINISTRATIF</option>
+                <option value="droit_penal">DROIT PÉNAL</option>
+                <option value="droit_affaires">DROIT DES AFFAIRES</option>
+                <option value="micro_eco">MICRO-ÉCONOMIE</option>
+                <option value="macro_eco">MACRO-ÉCONOMIE</option>
+                <option value="compta">COMPTABILITÉ</option>
+                <option value="marketing">MARKETING</option>
+              </optgroup>
+
+              <optgroup label="SCIENCES (SVT/PHYSIQUE)">
+                <option value="biocell">BIOLOGIE CELLULAIRE</option>
+                <option value="genetique">GÉNÉTIQUE</option>
+                <option value="chimie_orga">CHIMIE ORGANIQUE</option>
+                <option value="meca">MÉCANIQUE</option>
+                <option value="thermo">THERMODYNAMIQUE</option>
+                <option value="optique">OPTIQUE</option>
+                <option value="anatomie">ANATOMIE</option>
+              </optgroup>
+
+              <optgroup label="SHS / LANGUES">
+                <option value="psy_cognitive">PSYCHOLOGIE COGNITIVE</option>
+                <option value="psy_clinique">PSYCHOLOGIE CLINIQUE</option>
+                <option value="socio">SOCIOLOGIE GÉNÉRALE</option>
+                <option value="histoire_contemp">HISTOIRE CONTEMPORAINE</option>
+                <option value="histoire_medievale">HISTOIRE MÉDIÉVALE</option>
+                <option value="geographie">GÉOGRAPHIE</option>
+                <option value="grammaire">GRAMMAIRE / LINGUISTIQUE</option>
+                <option value="traduction">TRADUCTION (THÈME/VERSION)</option>
+                <option value="anglais">ANGLAIS (LVE)</option>
+              </optgroup>
             </select>
           </div>
+
           <div class="form-group">
             <label>PROFESSEUR</label>
             <input
@@ -213,15 +359,18 @@
               placeholder="NOM DU PROF"
             />
           </div>
+
           <div class="form-group">
             <label>TYPE</label>
             <select id="input-type" class="pixel-input">
-              <option value="exam">EXAMEN</option>
-              <option value="cc">CC</option>
-              <option value="td">TD</option>
-              <option value="tp">TP</option>
+              <option value="exam">EXAMEN / PARTIEL</option>
+              <option value="cc">CC (CONTRÔLE CONTINU)</option>
+              <option value="td">TD (TRAVAUX DIRIGÉS)</option>
+              <option value="tp">TP (TRAVAUX PRATIQUES)</option>
+              <option value="cm">COURS MAGISTRAL</option>
             </select>
           </div>
+
           <div class="form-group">
             <label>ANNEE</label>
             <select id="input-year" class="pixel-input">
@@ -234,6 +383,9 @@
               <option value="2020">2020</option>
               <option value="2019">2019</option>
               <option value="2018">2018</option>
+              <option value="2017">2017</option>
+              <option value="2016">2016</option>
+              <option value="2015">2015</option>
             </select>
           </div>
         </div>
@@ -434,6 +586,57 @@
           </button>
           <button id="confirm-purchase-btn" class="pixel-button small-btn">
             ACHETER
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="report-modal" class="modal hidden">
+      <div class="modal-content" style="max-width: 400px; text-align: center">
+        <h2 style="color: #ff0000">> SIGNALER_FICHIER</h2>
+
+        <p style="font-size: 0.6rem; margin-bottom: 1rem">
+          Quel est le problème avec ce fichier ?
+        </p>
+
+        <div class="form-group">
+          <select
+            id="report-reason-select"
+            class="pixel-input"
+            style="margin-bottom: 10px"
+          >
+            <option value="Mauvaise matière / Année">
+              Mauvaise Matière / Année
+            </option>
+            <option value="Fichier Illisible / Vide">
+              Fichier Illisible / Vide
+            </option>
+            <option value="Contenu Inapproprié">Contenu Inapproprié</option>
+            <option value="Autre">Autre</option>
+          </select>
+
+          <textarea
+            id="report-details"
+            class="pixel-input"
+            placeholder="Détails (ex: c'est des maths pas de l'info...)"
+            rows="3"
+            style="resize: none"
+          ></textarea>
+        </div>
+
+        <div class="modal-buttons">
+          <button
+            id="cancel-report-btn"
+            class="pixel-button small-btn"
+            style="border-style: dashed"
+          >
+            ANNULER
+          </button>
+          <button
+            id="confirm-report-btn"
+            class="pixel-button small-btn"
+            style="background-color: #ff0000; color: white"
+          >
+            SIGNALER
           </button>
         </div>
       </div>
