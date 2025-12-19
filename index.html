@@ -11,9 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
       rel="stylesheet"
     />
-
     <link rel="stylesheet" href="style.css" />
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
@@ -26,7 +24,6 @@
         "
       >
         <h1 class="logo">schoolbank</h1>
-
         <div id="auth-ui">
           <button
             id="login-btn"
@@ -35,7 +32,6 @@
           >
             LOGIN
           </button>
-
           <button
             id="profile-trigger-btn"
             class="pixel-button small-btn"
@@ -64,7 +60,6 @@
     <div id="bank" class="container bank-section">
       <div class="filters-container">
         <h2>> FILTRES_</h2>
-
         <div class="filters-grid">
           <div class="filter-group">
             <label>ETABLISSEMENT</label>
@@ -74,7 +69,6 @@
               <option value="lille">UNIVERSITÉ DE LILLE</option>
             </select>
           </div>
-
           <div class="filter-group">
             <label>FORMATION</label>
             <select id="filter-formation" class="pixel-input">
@@ -90,7 +84,6 @@
               <option value="licence_lettres">LICENCE LETTRES</option>
             </select>
           </div>
-
           <div class="filter-group">
             <label>MATIERE</label>
             <select id="filter-subject" class="pixel-input">
@@ -108,7 +101,6 @@
               <option value="anglais">ANGLAIS</option>
             </select>
           </div>
-
           <div class="filter-group">
             <label>PROFESSEUR</label>
             <input
@@ -118,7 +110,6 @@
               placeholder="NOM DU PROF..."
             />
           </div>
-
           <div class="filter-group">
             <label>TYPE</label>
             <select id="filter-type" class="pixel-input">
@@ -129,7 +120,6 @@
               <option value="tp">TP</option>
             </select>
           </div>
-
           <div class="filter-group">
             <label>ANNEE</label>
             <select id="filter-year" class="pixel-input">
@@ -146,7 +136,6 @@
             </select>
           </div>
         </div>
-
         <button id="search-btn" class="pixel-button small-btn">CHERCHER</button>
       </div>
 
@@ -173,12 +162,10 @@
     <div id="upload-modal" class="modal hidden">
       <div class="modal-content">
         <h2>> INFO_FICHIER</h2>
-
         <div class="form-group">
           <label>NOM DU FICHIER</label>
           <div id="modal-filename" class="file-name-display">...</div>
         </div>
-
         <div class="form-grid">
           <div class="form-group">
             <label>ETABLISSEMENT</label>
@@ -187,7 +174,6 @@
               <option value="lille">UNIVERSITÉ DE LILLE</option>
             </select>
           </div>
-
           <div class="form-group">
             <label>FORMATION</label>
             <select id="input-formation" class="pixel-input">
@@ -202,7 +188,6 @@
               <option value="licence_lettres">LICENCE LETTRES</option>
             </select>
           </div>
-
           <div class="form-group">
             <label>MATIERE</label>
             <select id="input-subject" class="pixel-input">
@@ -219,7 +204,6 @@
               <option value="anglais">ANGLAIS</option>
             </select>
           </div>
-
           <div class="form-group">
             <label>PROFESSEUR</label>
             <input
@@ -229,7 +213,6 @@
               placeholder="NOM DU PROF"
             />
           </div>
-
           <div class="form-group">
             <label>TYPE</label>
             <select id="input-type" class="pixel-input">
@@ -239,7 +222,6 @@
               <option value="tp">TP</option>
             </select>
           </div>
-
           <div class="form-group">
             <label>ANNEE</label>
             <select id="input-year" class="pixel-input">
@@ -255,7 +237,6 @@
             </select>
           </div>
         </div>
-
         <div class="modal-buttons">
           <button
             id="cancel-btn"
@@ -274,7 +255,6 @@
     <div id="auth-modal" class="modal hidden">
       <div class="modal-content" style="max-width: 400px">
         <h2 id="auth-title">> CONNEXION_</h2>
-
         <div class="form-group" style="margin-bottom: 1rem">
           <label>EMAIL</label>
           <input
@@ -284,7 +264,6 @@
             placeholder="EMAIL..."
           />
         </div>
-
         <div class="form-group" style="margin-bottom: 1rem">
           <label>MOT DE PASSE</label>
           <input
@@ -294,7 +273,6 @@
             placeholder="******"
           />
         </div>
-
         <div
           style="margin-bottom: 1.5rem; font-size: 0.6rem; text-align: center"
         >
@@ -302,7 +280,6 @@
             >Pas de compte ? S'inscrire</a
           >
         </div>
-
         <div class="modal-buttons">
           <button
             id="auth-cancel-btn"
@@ -317,10 +294,10 @@
         </div>
       </div>
     </div>
+
     <div id="profile-modal" class="modal hidden">
       <div class="modal-content" style="max-width: 400px; text-align: center">
         <h2>> CARTE_D_ETUDIANT</h2>
-
         <div
           style="
             margin-bottom: 2rem;
@@ -329,7 +306,6 @@
           "
         >
           <div style="font-size: 2rem; margin-bottom: 1rem">[ò_ó]</div>
-
           <div
             id="profile-email"
             style="
@@ -340,7 +316,6 @@
           >
             etudiant@univ.fr
           </div>
-
           <div
             style="
               display: flex;
@@ -353,7 +328,6 @@
               style="display: flex; flex-direction: column; align-items: center"
             >
               <div style="font-size: 0.5rem; color: #666">SOLDE</div>
-
               <div
                 id="profile-coins"
                 style="
@@ -365,15 +339,12 @@
               >
                 0
               </div>
-
               <div style="font-size: 0.4rem; color: #666">COINS</div>
             </div>
-
             <div
               style="display: flex; flex-direction: column; align-items: center"
             >
               <div style="font-size: 0.5rem; color: #666">STATUT</div>
-
               <div
                 id="profile-status"
                 style="
@@ -388,7 +359,7 @@
               </div>
               <a
                 id="upgrade-btn"
-                href="https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00"
+                href="#"
                 target="_blank"
                 class="pixel-button"
                 style="
@@ -397,17 +368,16 @@
                   border-width: 2px;
                   box-shadow: 2px 2px 0px var(--text-color);
                   text-decoration: none;
-                  display: none; /* Caché par défaut, le JS l'affichera */
+                  display: none;
                   margin-top: 5px;
                   background-color: #000;
                   color: #fff;
                 "
+                >UPGRADE ></a
               >
-                UPGRADE >
-              </a>
               <a
                 id="manage-sub-btn"
-                href="https://billing.stripe.com/p/login/test_dRmaEXgQueNd2gocPk7Zu00"
+                href="#"
                 target="_blank"
                 class="pixel-button"
                 style="
@@ -421,13 +391,11 @@
                   background-color: #fff;
                   color: #000;
                 "
+                >GÉRER ABO</a
               >
-                GÉRER ABO
-              </a>
             </div>
           </div>
         </div>
-
         <div class="modal-buttons" style="flex-direction: column; gap: 10px">
           <button
             id="close-profile-btn"
@@ -436,7 +404,6 @@
           >
             RETOUR
           </button>
-
           <button
             id="logout-btn"
             class="pixel-button small-btn"
@@ -447,7 +414,9 @@
         </div>
       </div>
     </div>
+
     <div id="pixel-toast">...</div>
+
     <div id="purchase-modal" class="modal hidden">
       <div class="modal-content" style="max-width: 400px; text-align: center">
         <h2>> CONFIRMER_ACHAT</h2>

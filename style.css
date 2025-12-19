@@ -1,9 +1,7 @@
-/* --- Configuration de base --- */
 :root {
   --bg-color: #ffffff;
   --text-color: #000000;
 }
-
 body,
 html {
   margin: 0;
@@ -14,8 +12,6 @@ html {
   overflow-x: hidden;
   scroll-behavior: smooth;
 }
-
-/* --- Netteté (Pixel Perfect) --- */
 .logo,
 .pixel-button,
 .scroll-arrow,
@@ -30,24 +26,19 @@ td,
   font-smooth: never;
   text-rendering: optimizeSpeed;
 }
-
-/* --- Layout --- */
 .container {
   display: flex;
   flex-direction: column;
   padding: 2rem;
   box-sizing: border-box;
 }
-
 .full-height {
   height: 100vh;
   justify-content: space-between;
 }
-
 header {
   flex-shrink: 0;
 }
-
 .logo {
   margin: 0;
   font-size: 1.5rem;
@@ -57,19 +48,15 @@ header {
   content: "_";
   animation: blink 1s step-end infinite;
 }
-
 main {
   flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
-/* --- Boutons Pixel --- */
 .pixel-button-container {
   position: relative;
 }
-
 .pixel-button {
   display: inline-block;
   background-color: var(--bg-color);
@@ -84,19 +71,16 @@ main {
   box-shadow: 6px 6px 0px var(--text-color);
   font-family: "Press Start 2P", cursive;
 }
-
 .pixel-button:hover {
   background-color: var(--text-color);
   color: var(--bg-color);
   transform: translate(-2px, -2px);
   box-shadow: 8px 8px 0px var(--text-color);
 }
-
 .pixel-button:active {
   transform: translate(4px, 4px);
   box-shadow: 2px 2px 0px var(--text-color);
 }
-
 .small-btn {
   font-size: 1rem;
   padding: 1rem 1.5rem;
@@ -104,12 +88,9 @@ main {
   box-shadow: 4px 4px 0px var(--text-color);
   margin-top: 1rem;
 }
-
 #file-upload-input {
   display: none;
 }
-
-/* --- Flèche --- */
 .scroll-arrow {
   text-align: center;
   font-size: 1.5rem;
@@ -118,7 +99,6 @@ main {
   color: var(--text-color);
   animation: bounce 2s infinite ease-in-out;
 }
-
 @keyframes bounce {
   0%,
   100% {
@@ -128,27 +108,21 @@ main {
     transform: translateY(10px);
   }
 }
-
 @keyframes blink {
   50% {
     opacity: 0;
   }
 }
-
-/* --- Section Banque --- */
 .bank-section {
   min-height: 100vh;
   border-top: 4px solid var(--text-color);
   padding-top: 4rem;
 }
-
 h2 {
   font-size: 1.2rem;
   margin-bottom: 2rem;
   text-transform: uppercase;
 }
-
-/* Filtres */
 .filters-container {
   margin-bottom: 4rem;
 }
@@ -165,8 +139,6 @@ h2 {
   font-size: 0.7rem;
   margin-bottom: 0.5rem;
 }
-
-/* Inputs */
 .pixel-input {
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -180,8 +152,6 @@ h2 {
   width: 100%;
   box-sizing: border-box;
 }
-
-/* Tableau */
 .table-wrapper {
   overflow-x: auto;
 }
@@ -206,13 +176,15 @@ h2 {
   color: var(--text-color);
   text-decoration: none;
   font-weight: bold;
+  cursor: pointer;
 }
 .dl-link:hover {
   background-color: var(--text-color);
   color: var(--bg-color);
 }
-
-/* --- Modale (Popup) --- */
+.dl-link.owned {
+  color: #008800;
+}
 .modal {
   position: fixed;
   top: 0;
@@ -255,8 +227,6 @@ h2 {
   justify-content: space-between;
   gap: 1rem;
 }
-
-/* Responsive */
 @media (max-width: 600px) {
   .filters-grid,
   .form-grid {
@@ -272,10 +242,8 @@ h2 {
     box-shadow: 4px 4px 0px var(--text-color);
   }
 }
-
-/* --- TOAST NOTIFICATION (Remplacement des alertes) --- */
 #pixel-toast {
-  visibility: hidden; /* Caché par défaut */
+  visibility: hidden;
   min-width: 250px;
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -284,20 +252,17 @@ h2 {
   box-shadow: 4px 4px 0px var(--text-color);
   padding: 1rem;
   position: fixed;
-  z-index: 9999; /* Au dessus de tout */
+  z-index: 9999;
   left: 50%;
   bottom: 30px;
   transform: translateX(-50%);
   font-size: 0.7rem;
   font-family: "Press Start 2P", cursive;
 }
-
-/* Animation d'apparition */
 #pixel-toast.show {
   visibility: visible;
   animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
-
 @keyframes fadein {
   from {
     bottom: 0;
@@ -308,7 +273,6 @@ h2 {
     opacity: 1;
   }
 }
-
 @keyframes fadeout {
   from {
     bottom: 30px;
@@ -318,14 +282,4 @@ h2 {
     bottom: 0;
     opacity: 0;
   }
-}
-
-/* Couleur pour le bouton après achat ou lors du survol d'achat */
-.dl-link.owned {
-  color: #008800; /* Vert plus foncé */
-}
-
-.dl-link:hover {
-  background-color: var(--text-color);
-  color: var(--bg-color);
 }

@@ -1,26 +1,18 @@
-// --- INIT SUPABASE ---
-// On vérifie si supabase existe déjà, sinon on le crée
 var supabase;
-
 if (window.supabase && window.supabase.createClient) {
   supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
-  console.error("La bibliothèque Supabase n'est pas chargée !");
+  console.error("Erreur: Supabase non chargé");
 }
 
-// --- ELEMENTS ---
 const fileInput = document.getElementById("file-upload-input");
 const tableBody = document.querySelector(".pixel-table tbody");
 const searchButton = document.getElementById("search-btn");
 const uploadTriggerBtn = document.getElementById("upload-trigger-btn");
-
-// Elements Modale Upload
 const modalUpload = document.getElementById("upload-modal");
 const modalFilename = document.getElementById("modal-filename");
 const cancelUploadBtn = document.getElementById("cancel-btn");
 const confirmUploadBtn = document.getElementById("confirm-upload-btn");
-
-// Elements Auth
 const loginBtn = document.getElementById("login-btn");
 const profileTriggerBtn = document.getElementById("profile-trigger-btn");
 const profileModal = document.getElementById("profile-modal");
@@ -33,11 +25,7 @@ const authPassInput = document.getElementById("auth-password");
 const authSubmitBtn = document.getElementById("auth-submit-btn");
 const authCancelBtn = document.getElementById("auth-cancel-btn");
 const toggleAuthModeLink = document.getElementById("toggle-auth-mode");
-
-// Element Toast (Notification)
 const toastElement = document.getElementById("pixel-toast");
-
-// Elements internes à la modale profil
 const profileEmail = document.getElementById("profile-email");
 const profileCoins = document.getElementById("profile-coins");
 const profileStatus = document.getElementById("profile-status");
@@ -45,58 +33,48 @@ const profileStatus = document.getElementById("profile-status");
 let selectedFile = null;
 let currentUser = null;
 let isLoginMode = true;
+let userIsPremium = false;
+let currentPurchaseFileId = null;
 
-// ==========================================
-// --- FONCTION NOTIFICATION (TOAST) ---
-// ==========================================
 function showToast(message) {
   toastElement.textContent = message;
   toastElement.className = "show";
-  setTimeout(function () {
+  setTimeout(() => {
     toastElement.className = toastElement.className.replace("show", "");
   }, 3000);
 }
 
-// ==========================================
-// --- GESTION DE L'AUTHENTIFICATION ---
-// ==========================================
-
 async function checkUser() {
-  // 1. Récupérer la session
   const {
     data: { session },
   } = await supabase.auth.getSession();
   currentUser = session?.user || null;
 
   if (currentUser) {
-    // 2. Récupérer les infos du profil (Coins, Premium...)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("*")
+      .select("coins, is_premium")
       .eq("id", currentUser.id)
       .single();
 
     if (profile) {
       currentUser.profileData = profile;
-      refreshProfileUI(profile); // Met à jour l'UI immédiatement
+      userIsPremium = profile.is_premium;
+      refreshProfileUI(profile);
     }
 
-    // 3. Récupérer les achats (Pour les boutons ACCÉDER)
     const { data: purchases } = await supabase
       .from("purchases")
       .select("file_id")
       .eq("user_id", currentUser.id);
 
-    // On stocke les IDs des fichiers achetés
     currentUser.owned_files = purchases ? purchases.map((p) => p.file_id) : [];
-
     setupRealtimeListener();
   } else {
-    // Si pas connecté, on nettoie
+    userIsPremium = false;
     if (profileCoins) profileCoins.textContent = "0";
     if (profileStatus) profileStatus.textContent = "...";
   }
-
   updateAuthUI();
 }
 
@@ -115,56 +93,35 @@ loginBtn.addEventListener("click", () => {
   resetAuthForm();
 });
 
-// ==========================================
-// --- GESTION DU PROFIL & ABONNEMENT ---
-// ==========================================
-
 profileTriggerBtn.addEventListener("click", () => {
   if (!currentUser) return;
-
   const upgradeBtn = document.getElementById("upgrade-btn");
   const manageBtn = document.getElementById("manage-sub-btn");
-
   profileEmail.textContent = currentUser.email;
 
   if (currentUser.profileData) {
     profileCoins.textContent = currentUser.profileData.coins;
     const isPremium = currentUser.profileData.is_premium;
-
     profileStatus.textContent = isPremium ? "PREMIUM" : "FREEMIUM";
     profileStatus.style.color = isPremium ? "#00aa00" : "inherit";
 
-    // Gestion UI des boutons (La vraie sécurité est côté serveur/RPC)
     if (isPremium) {
       if (upgradeBtn) upgradeBtn.style.display = "none";
       if (manageBtn) {
         manageBtn.style.display = "inline-block";
         manageBtn.textContent = "GÉRER ABO";
-
         manageBtn.onclick = async (e) => {
           e.preventDefault();
-          const portalTab = window.open("", "_blank");
-          portalTab.document.write(
-            "<html><body style='background:black; color:white; font-family:monospace; display:flex; justify-content:center; align-items:center; height:100vh;'>Chargement...</body></html>"
-          );
           manageBtn.textContent = "CHARGEMENT...";
-
           const { data, error } = await supabase.functions.invoke(
             "create-portal-link"
           );
-
-          if (error) {
-            console.error("Erreur Supabase:", error);
+          if (error || !data?.url) {
             manageBtn.textContent = "ERREUR";
             showToast("ERREUR PORTAIL");
-            portalTab.close();
-          } else if (data?.url) {
-            portalTab.location.href = data.url;
-            manageBtn.textContent = "GÉRER ABO";
           } else {
-            manageBtn.textContent = "ERREUR";
-            showToast("PAS DE COMPTE TROUVÉ");
-            portalTab.close();
+            window.open(data.url, "_blank");
+            manageBtn.textContent = "GÉRER ABO";
           }
         };
       }
@@ -173,18 +130,12 @@ profileTriggerBtn.addEventListener("click", () => {
       if (upgradeBtn) {
         upgradeBtn.style.display = "inline-block";
         const baseStripeUrl =
-          "https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00";
-        const customUrl = `${baseStripeUrl}?prefilled_email=${encodeURIComponent(
+          "https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00"; // REMPLACE PAR TON URL LIVE ICI SI NECESSAIRE
+        upgradeBtn.href = `${baseStripeUrl}?prefilled_email=${encodeURIComponent(
           currentUser.email
         )}&client_reference_id=${currentUser.id}`;
-        upgradeBtn.href = customUrl;
       }
     }
-  } else {
-    profileCoins.textContent = "0";
-    profileStatus.textContent = "CHARGEMENT...";
-    if (upgradeBtn) upgradeBtn.style.display = "none";
-    if (manageBtn) manageBtn.style.display = "none";
   }
   profileModal.classList.remove("hidden");
 });
@@ -192,86 +143,56 @@ profileTriggerBtn.addEventListener("click", () => {
 closeProfileBtn.addEventListener("click", () => {
   profileModal.classList.add("hidden");
 });
+authCancelBtn.addEventListener("click", () => {
+  authModal.classList.add("hidden");
+});
 
 logoutBtn.addEventListener("click", async () => {
   profileModal.classList.add("hidden");
-  await signOut();
-});
-
-authCancelBtn.addEventListener("click", () => {
-  authModal.classList.add("hidden");
+  await supabase.auth.signOut();
+  currentUser = null;
+  userIsPremium = false;
+  updateAuthUI();
+  fetchFiles();
+  showToast("DECONNECTE.");
 });
 
 toggleAuthModeLink.addEventListener("click", (e) => {
   e.preventDefault();
   isLoginMode = !isLoginMode;
-  if (isLoginMode) {
-    authTitle.textContent = "> CONNEXION_";
-    toggleAuthModeLink.textContent = "Pas de compte ? S'inscrire";
-    authSubmitBtn.textContent = "GO";
-  } else {
-    authTitle.textContent = "> INSCRIPTION_";
-    toggleAuthModeLink.textContent = "Déjà un compte ? Se connecter";
-    authSubmitBtn.textContent = "CREER";
-  }
+  authTitle.textContent = isLoginMode ? "> CONNEXION_" : "> INSCRIPTION_";
+  toggleAuthModeLink.textContent = isLoginMode
+    ? "Pas de compte ? S'inscrire"
+    : "Déjà un compte ? Se connecter";
+  authSubmitBtn.textContent = isLoginMode ? "GO" : "CREER";
 });
 
 authSubmitBtn.addEventListener("click", async () => {
   const email = authEmailInput.value;
   const password = authPassInput.value;
-
-  if (!email || !password) {
-    showToast("REMPLIR TOUS LES CHAMPS !");
-    return;
-  }
-
+  if (!email || !password) return showToast("REMPLIR TOUS LES CHAMPS !");
   authSubmitBtn.textContent = "...";
 
   try {
-    if (isLoginMode) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      showToast("CONNEXION REUSSIE !");
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      showToast("COMPTE CREE ! VERIFIE TES EMAILS.");
-    }
+    const { error } = isLoginMode
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
 
+    if (error) throw error;
+
+    showToast(
+      isLoginMode ? "CONNEXION REUSSIE !" : "COMPTE CREE ! VERIFIE TES EMAILS."
+    );
     authModal.classList.add("hidden");
-
-    // --- C'EST ICI LA MAGIE ---
-    showToast("CHARGEMENT PROFIL...");
-    await checkUser(); // On attend d'avoir chargé le profil et les achats
-    fetchFiles(); // On redessine le tableau avec les boutons verts "ACCÉDER"
-    // -------------------------
+    await checkUser();
+    fetchFiles();
   } catch (error) {
-    console.error(error);
     showToast("ERREUR: " + error.message);
   } finally {
     authSubmitBtn.textContent = isLoginMode ? "GO" : "CREER";
   }
 });
 
-async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (!error) {
-    currentUser = null;
-
-    // Mise à zéro visuelle immédiate
-    document.getElementById("profile-coins").textContent = "0";
-    document.getElementById("profile-status").textContent = "DECONNECTÉ";
-
-    updateAuthUI();
-    fetchFiles(); // Recharge le tableau pour enlever les boutons "ACCÉDER"
-    showToast("DECONNECTE.");
-  }
-}
-
-// Fonction pour calculer l'empreinte numérique (Hash) d'un fichier
 async function calculateFileHash(file) {
   const arrayBuffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
@@ -279,10 +200,6 @@ async function calculateFileHash(file) {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
-
-// ==========================================
-// --- GESTION DES UPLOADS ---
-// ==========================================
 
 uploadTriggerBtn.addEventListener("click", () => {
   if (!currentUser) {
@@ -296,7 +213,6 @@ uploadTriggerBtn.addEventListener("click", () => {
 fileInput.addEventListener("change", (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
-    // Petite sécu JS (mais doit être renforcée côté Supabase Storage)
     if (selectedFile.type !== "application/pdf") {
       showToast("SEULS LES PDF SONT ACCEPTÉS !");
       fileInput.value = "";
@@ -316,8 +232,6 @@ cancelUploadBtn.addEventListener("click", () => {
 
 confirmUploadBtn.addEventListener("click", async () => {
   if (!selectedFile || !currentUser) return;
-
-  // Récupération des données du formulaire
   const info = {
     etab: document.getElementById("input-etab").value,
     formation: document.getElementById("input-formation").value,
@@ -329,12 +243,8 @@ confirmUploadBtn.addEventListener("click", async () => {
   };
 
   confirmUploadBtn.textContent = "VERIFICATION...";
-
   try {
-    // 1. CALCUL DU HASH (Anti-Doublon Local)
     const fileHash = await calculateFileHash(selectedFile);
-
-    // 2. VERIFICATION EN BASE (Est-ce qu'on l'a déjà ?)
     const { data: existingFile } = await supabase
       .from("files")
       .select("id")
@@ -342,69 +252,43 @@ confirmUploadBtn.addEventListener("click", async () => {
       .maybeSingle();
 
     if (existingFile) {
-      showToast("❌ FICHIER DÉJÀ PRÉSENT DANS LA BANQUE !");
+      showToast("❌ FICHIER DÉJÀ PRÉSENT !");
       confirmUploadBtn.textContent = "ENVOYER";
-      return; // On arrête tout ici
+      return;
     }
 
-    // 3. UPLOAD PHYSIQUE (Nécessaire pour que l'IA puisse le lire)
     confirmUploadBtn.textContent = "ENVOI...";
     const cleanName =
       Date.now() + "_" + selectedFile.name.replace(/[^a-zA-Z0-9.]/g, "_");
-
     const { error: storageError } = await supabase.storage
       .from("pdfs")
       .upload(cleanName, selectedFile);
-
     if (storageError) throw storageError;
 
-    // Récupération de l'URL publique pour l'IA
     const { data: urlData } = supabase.storage
       .from("pdfs")
       .getPublicUrl(cleanName);
-    const publicUrl = urlData.publicUrl;
-
-    // 4. ANALYSE IA & VERIFICATION DE COHERENCE
     confirmUploadBtn.textContent = "ANALYSE IA...";
     showToast("L'IA VÉRIFIE VOTRE FICHIER...");
 
-    // On appelle ta Edge Function 'analyze-document'
-    // Elle doit comparer le contenu du PDF avec 'info' (tes inputs)
     const { data: analysis, error: aiError } = await supabase.functions.invoke(
       "analyze-document",
       {
-        body: {
-          fileUrl: publicUrl,
-          userInputs: info, // On envoie ce que l'user prétend que c'est
-        },
+        body: { fileUrl: urlData.publicUrl, userInputs: info },
       }
     );
 
-    if (aiError) {
-      console.error("Erreur IA:", aiError);
-      // En cas d'erreur technique IA, on supprime le fichier par sécurité ?
-      // Ou on accepte manuellement ? Ici je choisis la sécurité : on annule.
+    if (aiError || !analysis.valid) {
       await supabase.storage.from("pdfs").remove([cleanName]);
-      showToast("ERREUR IA : UPLOAD ANNULÉ");
+      showToast(aiError ? "ERREUR IA" : `❌ REFUSÉ : ${analysis.reason}`);
       confirmUploadBtn.textContent = "ENVOYER";
       return;
     }
 
-    // 5. VERDICT DE L'IA
-    if (!analysis.valid) {
-      // SI C'EST UN FAUX OU INCOHÉRENT :
-      showToast(`❌ REFUSÉ : ${analysis.reason}`);
-      // On supprime immédiatement le fichier du stockage ("Poubelle")
-      await supabase.storage.from("pdfs").remove([cleanName]);
-      confirmUploadBtn.textContent = "ENVOYER";
-      return;
-    }
-
-    // 6. SUCCÈS : INSERTION EN BASE (Seulement si tout est bon)
     const { error: dbError } = await supabase.from("files").insert([
       {
         name: selectedFile.name,
-        user_id: currentUser.id, // <--- IMPORTANT : Lier le fichier à l'utilisateur
+        user_id: currentUser.id,
         file_url: urlData.publicUrl,
         file_hash: fileHash,
         etablissement: info.etab,
@@ -413,7 +297,7 @@ confirmUploadBtn.addEventListener("click", async () => {
         prof: info.prof,
         type: info.type,
         year: info.year,
-        status: "approved", // <--- INDISPENSABLE : Pour qu'il s'affiche
+        status: "approved",
       },
     ]);
 
@@ -424,20 +308,14 @@ confirmUploadBtn.addEventListener("click", async () => {
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
 
-    // --- AJOUT : REMISE À ZÉRO DES FILTRES ---
-    document.getElementById("filter-etab").value = "";
-    document.getElementById("filter-formation").value = "";
-    document.getElementById("filter-subject").value = "";
-    document.getElementById("filter-type").value = "";
-    document.getElementById("filter-year").value = "";
-    document.getElementById("filter-prof").value = "";
-    // -----------------------------------------
+    // Reset Filters
+    ["etab", "formation", "subject", "type", "year", "prof"].forEach(
+      (id) => (document.getElementById(`filter-${id}`).value = "")
+    );
 
-    // Rafraîchissement automatique
     await checkUser();
     await fetchFiles();
   } catch (error) {
-    console.error(error);
     showToast("ERREUR TECHNIQUE...");
     confirmUploadBtn.textContent = "ENVOYER";
   }
@@ -452,47 +330,33 @@ function resetAuthForm() {
   authSubmitBtn.textContent = "GO";
 }
 
-// ==========================================
-// --- RECUPERATION DES FICHIERS (SECURISÉE) ---
-// ==========================================
-
 async function fetchFiles() {
-  const filterEtab = document.getElementById("filter-etab").value;
-  const filterFormation = document.getElementById("filter-formation").value;
-  const filterSubject = document.getElementById("filter-subject").value;
-  const filterProf = document.getElementById("filter-prof").value;
-  const filterType = document.getElementById("filter-type").value;
-  const filterYear = document.getElementById("filter-year").value;
-
-  // 🔒 SECURITÉ: On ne sélectionne PAS 'file_url' !
-  // On ne prend que ce qui est nécessaire pour l'affichage.
+  const getVal = (id) => document.getElementById(id).value;
   let query = supabase
     .from("files")
-    .select(
-      "id, name, etablissement, formation, subject, prof, type, year, created_at"
-    )
+    .select("id, name, etablissement, formation, subject, prof, type, year")
     .eq("status", "approved")
     .order("created_at", { ascending: false });
 
-  if (filterEtab) query = query.eq("etablissement", filterEtab);
-  if (filterFormation) query = query.eq("formation", filterFormation);
-  if (filterSubject) query = query.eq("subject", filterSubject);
-  if (filterType) query = query.eq("type", filterType);
-  if (filterYear) query = query.eq("year", filterYear);
-  if (filterProf) query = query.ilike("prof", `%${filterProf}%`);
+  if (getVal("filter-etab"))
+    query = query.eq("etablissement", getVal("filter-etab"));
+  if (getVal("filter-formation"))
+    query = query.eq("formation", getVal("filter-formation"));
+  if (getVal("filter-subject"))
+    query = query.eq("subject", getVal("filter-subject"));
+  if (getVal("filter-type")) query = query.eq("type", getVal("filter-type"));
+  if (getVal("filter-year")) query = query.eq("year", getVal("filter-year"));
+  if (getVal("filter-prof"))
+    query = query.ilike("prof", `%${getVal("filter-prof")}%`);
 
   const { data, error } = await query;
-
-  if (error) {
-    console.error("Erreur Fetch:", error);
+  if (error || !data) {
     tableBody.innerHTML = '<tr><td colspan="6">ERREUR CHARGEMENT...</td></tr>';
+  } else if (data.length === 0) {
+    tableBody.innerHTML =
+      '<tr><td colspan="6">AUCUN FICHIER TROUVE...</td></tr>';
   } else {
-    if (data.length === 0) {
-      tableBody.innerHTML =
-        '<tr><td colspan="6">AUCUN FICHIER TROUVE...</td></tr>';
-    } else {
-      renderTable(data);
-    }
+    renderTable(data);
   }
 }
 
@@ -505,12 +369,6 @@ searchButton.addEventListener("click", () => {
 
 function refreshProfileUI(newProfileData) {
   currentUser.profileData = newProfileData;
-  const headerCoins = document.getElementById("user-coins");
-  if (headerCoins) {
-    headerCoins.textContent = newProfileData.is_premium
-      ? "∞"
-      : newProfileData.coins;
-  }
   if (!profileModal.classList.contains("hidden")) {
     profileCoins.textContent = newProfileData.coins;
     const isPremium = newProfileData.is_premium;
@@ -519,13 +377,10 @@ function refreshProfileUI(newProfileData) {
 
     const upgradeBtn = document.getElementById("upgrade-btn");
     const manageBtn = document.getElementById("manage-sub-btn");
-    if (isPremium) {
-      if (upgradeBtn) upgradeBtn.style.display = "none";
-      if (manageBtn) manageBtn.style.display = "inline-block";
-    } else {
-      if (manageBtn) manageBtn.style.display = "none";
-      if (upgradeBtn) upgradeBtn.style.display = "inline-block";
-    }
+    if (upgradeBtn)
+      upgradeBtn.style.display = isPremium ? "none" : "inline-block";
+    if (manageBtn)
+      manageBtn.style.display = isPremium ? "inline-block" : "none";
   }
 }
 
@@ -542,25 +397,20 @@ function setupRealtimeListener() {
         filter: `id=eq.${currentUser.id}`,
       },
       (payload) => {
+        currentUser.profileData = payload.new;
+        userIsPremium = payload.new.is_premium;
         refreshProfileUI(payload.new);
+        fetchFiles();
         showToast("DONNÉES MISES À JOUR !");
       }
     )
     .subscribe();
 }
 
-// ==========================================
-// --- AFFICHAGE TABLEAU (SECURISÉ XSS) ---
-// ==========================================
-
 function renderTable(files) {
-  tableBody.innerHTML = ""; // Vide le tableau
-
+  tableBody.innerHTML = "";
   files.forEach((file) => {
     const row = document.createElement("tr");
-
-    // Fonction helper pour créer une cellule textuelle sécurisée
-    // textContent empêche l'injection de HTML (XSS)
     const createCell = (text) => {
       const td = document.createElement("td");
       td.textContent = text || "-";
@@ -573,78 +423,59 @@ function renderTable(files) {
     row.appendChild(createCell(file.prof));
     row.appendChild(createCell(file.year));
 
-    // Cellule de téléchargement
     const dlCell = document.createElement("td");
     const link = document.createElement("a");
     link.href = "#";
     link.className = "dl-link";
 
-    // --- LOGIQUE D'AFFICHAGE DU BOUTON ---
-    // On vérifie si l'ID du fichier actuel est dans les fichiers possédés
-    const isOwned = currentUser?.owned_files?.includes(file.id);
-
-    if (isOwned) {
+    if (userIsPremium) {
+      link.textContent = "[ACCÈS PREMIUM ⭐]";
+      link.classList.add("owned");
+      link.style.color = "#d4af37";
+      link.style.fontWeight = "bold";
+    } else if (currentUser?.owned_files?.includes(file.id)) {
       link.textContent = "[ACCÉDER]";
       link.classList.add("owned");
-      link.style.color = "#008800"; // Vert foncé
+      link.style.color = "#008800";
     } else {
       link.textContent = "[ACHETER - 50c]";
     }
-    // -------------------------------------
 
-    link.dataset.id = file.id;
     link.addEventListener("click", (e) => handleDownloadClick(e, file.id));
-
     dlCell.appendChild(link);
     row.appendChild(dlCell);
     tableBody.appendChild(row);
   });
 }
 
-let currentPurchaseFileId = null; // Pour stocker l'ID du fichier en cours d'achat
-
 async function handleDownloadClick(e, fileId) {
   e.preventDefault();
-  const linkElement = e.target;
-
   if (!currentUser) {
     showToast("CONNECTE-TOI POUR ACCÉDER !");
     authModal.classList.remove("hidden");
     return;
   }
 
-  // Vérifie si le bouton affiche déjà "ACCÉDER"
-  const isAlreadyOwned = linkElement.textContent.includes("ACCÉDER");
-
-  if (isAlreadyOwned) {
-    // Si déjà possédé, on lance directement le téléchargement
-    executeDownload(fileId, linkElement);
+  if (userIsPremium || currentUser.owned_files.includes(fileId)) {
+    await executeDownload(fileId, e.target);
   } else {
-    // Sinon, on ouvre la modale de confirmation personnalisée
     currentPurchaseFileId = fileId;
-    const purchaseModal = document.getElementById("purchase-modal");
-    purchaseModal.classList.remove("hidden");
-
-    // On lie l'élément du lien pour pouvoir le modifier après l'achat
-    window.lastClickedLink = linkElement;
+    window.lastClickedLink = e.target;
+    document.getElementById("purchase-modal").classList.remove("hidden");
   }
 }
 
-// Fonction qui fait l'appel réel à Supabase
 async function executeDownload(fileId, linkElement) {
   const originalText = linkElement.textContent;
   linkElement.textContent = "...";
-
-  // Conversion explicite en nombre pour correspondre au type BIGINT de la base
   const cleanId = parseInt(fileId, 10);
 
   const { data, error } = await supabase.rpc("download_file", {
-    p_file_id: cleanId, // Assure-toi que c'est bien p_file_id ici
+    p_file_id: cleanId,
   });
 
   if (error || (data && data.error)) {
-    console.error("Erreur détaillée:", error || data.error);
-    showToast(data?.error || "ERREUR DE TRANSACTION");
+    showToast(data?.error || "ERREUR");
     linkElement.textContent = originalText;
   } else {
     showToast("OUVERTURE...");
@@ -653,15 +484,19 @@ async function executeDownload(fileId, linkElement) {
     }
     window.open(data.url, "_blank");
     if (currentUser && !currentUser.owned_files.includes(cleanId)) {
-      currentUser.owned_files.push(cleanId); // On l'ajoute à la liste locale
+      currentUser.owned_files.push(cleanId);
     }
-    // Transforme le bouton en vert foncé "ACCÉDER"
-    linkElement.textContent = "[ACCÉDER]";
-    linkElement.classList.add("owned");
+
+    if (userIsPremium) {
+      linkElement.textContent = "[ACCÈS PREMIUM ⭐]";
+    } else {
+      linkElement.textContent = "[ACCÉDER]";
+      linkElement.classList.add("owned");
+      linkElement.style.color = "#008800";
+    }
   }
 }
 
-// Gestionnaires pour les boutons de la modale de confirmation
 document.getElementById("cancel-purchase-btn").addEventListener("click", () => {
   document.getElementById("purchase-modal").classList.add("hidden");
 });
