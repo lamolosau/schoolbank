@@ -254,6 +254,13 @@
           </table>
         </div>
       </div>
+      <div class="footer-legal">
+        <a href="#" id="legal-trigger-btn" class="dl-link"
+          >Mentions Légales - CGU - Confidentialité</a
+        >
+        <br /><br />
+        © 2025 SCHOOLBANK_
+      </div>
     </div>
 
     <div id="upload-modal" class="modal hidden">
@@ -444,6 +451,39 @@
             class="pixel-input"
             placeholder="******"
           />
+        </div>
+        <div
+          id="auth-cgu-group"
+          class="form-group hidden"
+          style="
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 1rem;
+            width: 100%;
+          "
+        >
+          <input type="checkbox" id="auth-cgu-check" class="pixel-checkbox" />
+
+          <label
+            for="auth-cgu-check"
+            style="
+              font-size: 0.4rem;
+              cursor: pointer;
+              margin-bottom: 0;
+              flex: 1;
+              line-height: 1.4;
+              padding-top: 2px;
+            "
+          >
+            J'accepte les
+            <a
+              href="#"
+              id="auth-open-legal"
+              style="text-decoration: underline; color: var(--text-color)"
+              >CGU & Politique de Confidentialité</a
+            >
+          </label>
         </div>
         <div
           style="margin-bottom: 1.5rem; font-size: 0.6rem; text-align: center"
@@ -661,7 +701,54 @@
         </div>
       </div>
     </div>
+    <div id="legal-modal" class="modal hidden">
+      <div class="modal-content" style="max-width: 600px; text-align: center">
+        <h2>> DOCUMENTS_LEGAUX</h2>
 
+        <div class="legal-scroll-area">
+          <strong class="legal-title">1. MENTIONS LÉGALES</strong>
+          <strong>Éditeur du site :</strong><br />
+          LAKEL Djibril<br />
+          Contact : schoolbankfr@gmail.com<br />
+          Hébergeur : Netlify (Frontend) & Supabase Inc. (Backend)<br />
+          <br />
+          <strong class="legal-title">2. CGU & CGV</strong>
+          <strong>Objet :</strong><br />
+          Le site Schoolbank permet l'échange de fichiers pédagogiques et
+          l'achat de monnaie virtuelle ("Coins") ou d'abonnements
+          ("Premium").<br />
+          <br />
+          <strong>Prix et Paiement :</strong><br />
+          Les prix sont indiqués en euros TTC. Le paiement est sécurisé par
+          Stripe.<br />
+          <br />
+          <strong>Renoncement au droit de rétractation :</strong><br />
+          En achetant un accès Premium ou des Coins, vous accédez immédiatement
+          au contenu numérique. Conformément à l'article L221-28 du Code de la
+          Consommation, vous renoncez expressément à votre droit de rétractation
+          de 14 jours.<br />
+          <br />
+          <strong>Propriété Intellectuelle :</strong><br />
+          Le design et le code sont la propriété de l'éditeur. Les fichiers PDF
+          appartiennent à leurs auteurs respectifs.<br />
+          <br />
+          <strong class="legal-title">3. CONFIDENTIALITÉ (RGPD)</strong>
+          <strong>Données collectées :</strong> Email et historique d'achats.<br />
+          <strong>Usage :</strong> Fonctionnement du service uniquement. Pas de
+          revente.<br />
+          <strong>Cookies :</strong> Cookies techniques essentiels (Connexion,
+          Paiement).<br />
+          <strong>Vos droits :</strong> Contactez-nous par mail pour supprimer
+          votre compte.
+        </div>
+
+        <div class="modal-buttons" style="justify-content: center">
+          <button id="close-legal-btn" class="pixel-button small-btn">
+            J'AI COMPRIS
+          </button>
+        </div>
+      </div>
+    </div>
     <script src="config.js"></script>
     <script src="script.js"></script>
   </body>

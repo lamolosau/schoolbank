@@ -29,7 +29,17 @@ const toastElement = document.getElementById("pixel-toast");
 const profileEmail = document.getElementById("profile-email");
 const profileCoins = document.getElementById("profile-coins");
 const profileStatus = document.getElementById("profile-status");
+const authCguGroup = document.getElementById("auth-cgu-group");
+const authCguCheck = document.getElementById("auth-cgu-check");
+const authOpenLegal = document.getElementById("auth-open-legal");
+const legalModal = document.getElementById("legal-modal");
+const legalTriggerBtn = document.getElementById("legal-trigger-btn");
+const closeLegalBtn = document.getElementById("close-legal-btn");
+const reportModal = document.getElementById("report-modal");
+const reportDetailsInput = document.getElementById("report-details");
+const reportReasonSelect = document.getElementById("report-reason-select");
 
+let currentReportFileId = null;
 let selectedFile = null;
 let currentUser = null;
 let isLoginMode = true;
@@ -164,12 +174,22 @@ toggleAuthModeLink.addEventListener("click", (e) => {
     ? "Pas de compte ? S'inscrire"
     : "Déjà un compte ? Se connecter";
   authSubmitBtn.textContent = isLoginMode ? "GO" : "CREER";
+  if (isLoginMode) {
+    authCguGroup.classList.add("hidden");
+  } else {
+    authCguGroup.classList.remove("hidden");
+  }
 });
 
 authSubmitBtn.addEventListener("click", async () => {
   const email = authEmailInput.value;
   const password = authPassInput.value;
   if (!email || !password) return showToast("REMPLIR TOUS LES CHAMPS !");
+
+  if (!isLoginMode && !authCguCheck.checked) {
+    return showToast("VEUILLEZ ACCEPTER LES CGU !");
+  }
+
   authSubmitBtn.textContent = "...";
 
   try {
@@ -307,7 +327,6 @@ confirmUploadBtn.addEventListener("click", async () => {
     fileInput.value = "";
     confirmUploadBtn.textContent = "ENVOYER";
 
-    // Reset Filters
     ["etab", "formation", "subject", "type", "year", "prof"].forEach(
       (id) => (document.getElementById(`filter-${id}`).value = "")
     );
@@ -327,6 +346,10 @@ function resetAuthForm() {
   authTitle.textContent = "> CONNEXION_";
   toggleAuthModeLink.textContent = "Pas de compte ? S'inscrire";
   authSubmitBtn.textContent = "GO";
+  if (authCguGroup) {
+    authCguGroup.classList.add("hidden");
+    authCguCheck.checked = false;
+  }
 }
 
 async function fetchFiles() {
@@ -526,15 +549,6 @@ checkUser().then(() => {
   fetchFiles();
 });
 
-// ==========================================
-// --- GESTION DES SIGNALEMENTS (REPORT) ---
-// ==========================================
-
-let currentReportFileId = null;
-const reportModal = document.getElementById("report-modal");
-const reportDetailsInput = document.getElementById("report-details");
-const reportReasonSelect = document.getElementById("report-reason-select");
-
 function openReportModal(fileId) {
   if (!currentUser) {
     showToast("CONNECTE-TOI POUR SIGNALER !");
@@ -542,7 +556,7 @@ function openReportModal(fileId) {
     return;
   }
   currentReportFileId = fileId;
-  reportDetailsInput.value = ""; // Vider le champ texte
+  reportDetailsInput.value = "";
   reportModal.classList.remove("hidden");
 }
 
@@ -585,3 +599,23 @@ document
       btn.textContent = "SIGNALER";
     }
   });
+
+if (legalTriggerBtn) {
+  legalTriggerBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    legalModal.classList.remove("hidden");
+  });
+}
+
+if (closeLegalBtn) {
+  closeLegalBtn.addEventListener("click", () => {
+    legalModal.classList.add("hidden");
+  });
+}
+
+if (authOpenLegal) {
+  authOpenLegal.addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("legal-modal").classList.remove("hidden");
+  });
+}
