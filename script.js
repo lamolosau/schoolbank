@@ -129,8 +129,7 @@ profileTriggerBtn.addEventListener("click", () => {
       if (manageBtn) manageBtn.style.display = "none";
       if (upgradeBtn) {
         upgradeBtn.style.display = "inline-block";
-        const baseStripeUrl =
-          "https://buy.stripe.com/test_dRmaEXgQueNd2gocPk7Zu00"; // REMPLACE PAR TON URL LIVE ICI SI NECESSAIRE
+        const baseStripeUrl = "https://buy.stripe.com/00wfZj0vp4mI3Ejfm44sE01";
         upgradeBtn.href = `${baseStripeUrl}?prefilled_email=${encodeURIComponent(
           currentUser.email
         )}&client_reference_id=${currentUser.id}`;
